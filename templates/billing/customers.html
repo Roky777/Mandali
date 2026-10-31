@@ -21,7 +21,7 @@
 </thead>
 <tbody>{% for customer in page %}<tr>
 <td>
-<a href="{% url 'customer_detail' workspace.pk customer.pk %}"><strong>{{ customer.name }}</strong></a>
+<a href="{% url 'customer_detail' workspace.pk customer.pk %}"><strong>{{ customer.name }}</strong></a>{% if customer.pk in late_payers %} <span class="tag status-overdue">Late payer</span>{% endif %}
 <span>{{ customer.email|default:'No email' }}</span>
 </td>
 <td data-label="Phone">{{ customer.phone|default:'None' }}</td>

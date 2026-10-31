@@ -36,6 +36,8 @@ urlpatterns = [
     path("invoices/<int:pk>/", views.invoice_detail, name="invoice_detail"),
     path("invoices/<int:pk>/edit/", views.invoice_edit, name="invoice_edit"),
     path("invoices/<int:pk>/email/", views.invoice_email, name="invoice_email"),
+    path("invoices/<int:pk>/upi.svg", views.invoice_upi_qr, name="invoice_upi_qr"),
+    path("invoices/bank-import/", views.bank_import, name="invoice_bank_import"),
     path("invoices/<int:pk>/print/", views.invoice_print, name="invoice_print"),
     path("invoices/<int:pk>/lines/", views.invoice_line, name="invoice_line_add"),
     path(

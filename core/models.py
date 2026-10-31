@@ -48,6 +48,7 @@ class Workspace(models.Model):
     billing_email = models.EmailField()
     address = models.TextField(max_length=500)
     gstin = models.CharField("GSTIN", max_length=15, blank=True)
+    upi_id = models.CharField("UPI ID", max_length=80, blank=True)
     website = models.URLField(blank=True)
     use_api = models.BooleanField(default=False)
     use_hosted = models.BooleanField(default=True)

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}Match bank statement{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'invoices' workspace.pk %}">Invoices</a>
+<h1>Match a bank statement</h1>
+<p>Upload your bank's CSV export. Mandali suggests the open invoice for each credit; you choose which to record.</p>
+</div>
+</div>
+<form class="filter-row" method="post" enctype="multipart/form-data">{% csrf_token %}<div>
+<label for="statement">Statement CSV</label>
+<input type="file" name="statement" id="statement" accept=".csv,text/csv" required>
+</div>
+<button class="button quiet" type="submit">Find matches</button>
+</form>
+<p class="field-help">Needs columns for date, amount (or credit), and description (or narration). An invoice number such as INV-00012 in the description is the strongest match; otherwise only a unique exact balance is suggested. Up to 500 rows.</p>
+{% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
+{% if rows %}<form method="post">{% csrf_token %}<input type="hidden" name="step" value="record">
+<div class="data-table">
+<table>
+<caption class="visually-hidden">Statement rows</caption>
+<thead>
+<tr>
+<th scope="col">Record</th>
+<th scope="col">Date</th>
+<th scope="col">Description</th>
+<th scope="col" class="num">Amount</th>
+<th scope="col">Suggested invoice</th>
+</tr>
+</thead>
+<tbody>{% for row in rows %}<tr>
+<td>{% if row.token %}<input type="checkbox" name="row" value="{{ row.token }}" checked aria-label="Record this payment">{% else %}<span class="muted">No match</span>{% endif %}</td>
+<td data-label="Date">{{ row.date }}</td>
+<td data-label="Description">{{ row.text }}</td>
+<td class="num" data-label="Amount">{{ row.amount|inr }}</td>
+<td data-label="Suggested invoice">{% if row.invoice %}<a href="{% url 'invoice_detail' workspace.pk row.invoice.pk %}">{{ row.invoice.number }}</a><span>{{ row.invoice.customer_name }}, {{ row.invoice.balance|inr }} owed</span>{% endif %}<span>{{ row.reason }}</span></td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+<button class="button" type="submit" {% if not matched %}disabled{% endif %}>Record {{ matched }} matched payment{{ matched|pluralize }}</button>
+</form>{% endif %}{% endblock %}

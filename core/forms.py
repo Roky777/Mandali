@@ -1,3 +1,4 @@
+import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import User, Workspace
@@ -40,6 +41,7 @@ class WorkspaceForm(forms.ModelForm):
             "billing_email",
             "address",
             "gstin",
+            "upi_id",
             "website",
             "use_api",
             "use_hosted",
@@ -51,6 +53,7 @@ class WorkspaceForm(forms.ModelForm):
             "billing_email": "Billing email",
             "address": "Billing address",
             "gstin": "GSTIN (optional)",
+            "upi_id": "UPI ID for invoice QR codes (optional)",
             "website": "Website (optional)",
             "use_api": "Website / API integration",
             "use_hosted": "Shareable links and QR codes",
@@ -67,6 +70,12 @@ class WorkspaceForm(forms.ModelForm):
 
     def clean_gstin(self):
         return clean_gstin(self.cleaned_data["gstin"])
+
+    def clean_upi_id(self):
+        value = self.cleaned_data["upi_id"].strip()
+        if value and not re.fullmatch(r"[A-Za-z0-9._-]{2,64}@[A-Za-z0-9.-]{2,64}", value):
+            raise forms.ValidationError("Use a UPI ID like yourbusiness@okaxis.")
+        return value
 
     def clean(self):
         data = super().clean()
