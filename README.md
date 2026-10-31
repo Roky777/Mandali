@@ -81,6 +81,8 @@ flowchart LR
     Worker --> SMTP
 ```
 
+For setup guides, a code map, and a short manual walkthrough, see the [documentation index](docs/README.md).
+
 ### Apps
 
 | App | Responsibility |

@@ -199,6 +199,7 @@ def link_create(request, membership):
             "title": "Create a sandbox checkout link",
             "description": "Share one invoice, or reuse a product or plan link for separate customers. All payments here are test payments.",
             "submit": "Create link",
+            "cancel_url": reverse("checkout_links", args=[membership.workspace.pk]),
         },
     )
 
