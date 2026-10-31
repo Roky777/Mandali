@@ -1,0 +1,68 @@
+/* Warm charcoal and coral: the same Mandali identity in low light. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #181719;
+  --color-paper-2: #222124;
+  --color-paper-3: #333034;
+  --color-shell: #1d1b1e;
+  --color-surface: #242225;
+  --color-hover: #302c30;
+  --color-ink: #f4efec;
+  --color-ink-2: #ded6d2;
+  --color-muted: #b9aeaa;
+  --color-rule: #494146;
+  --color-rule-soft: #373136;
+  --color-control-border: #877a80;
+  --color-accent: #ff9c8b;
+  --color-accent-deep: #ffb9aa;
+  --color-accent-soft: #402a2b;
+  --color-accent-ink: #301715;
+  --color-focus: #ffb9aa;
+  --color-error: #ff9b9b;
+  --color-success: #89d5ac;
+  --color-chart: #a36e67;
+  --color-chart-current: #ff9c8b;
+  --light: #302c30;
+  --glint: #494146;
+  --mesh-line: color-mix(in oklab, var(--color-accent) 9%, transparent);
+  --mesh-wash: color-mix(in oklab, var(--color-accent) 4%, transparent);
+  --shadow-card: 0 12px 32px #00000026;
+  --shadow-lift: 0 16px 40px #00000040;
+}
+.theme-picker[data-theme-picker] {
+  width: auto;
+  min-width: 110px;
+  min-height: 44px;
+  padding: 8px 28px 8px 12px;
+  background-color: var(--color-paper-2);
+  color: var(--color-ink-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-input);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.theme-picker[hidden] { display: none; }
+.theme-picker:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.public-header-actions { display: flex; align-items: center; gap: var(--space-sm); }
+/* QR codes need their white quiet zone in either appearance. */
+.qr-preview, .upi-box img { background: #fff; }
+@media (max-width: 640px) {
+  .theme-picker[data-theme-picker] { min-width: 92px; padding-left: 8px; font-size: var(--text-xs); }
+  .topbar-inner { flex-wrap: wrap; gap: var(--space-sm); padding-block: var(--space-sm); }
+  .account-nav { flex-wrap: wrap; justify-content: end; }
+  .public-header-actions { flex-wrap: wrap; justify-content: end; }
+}
+@media print {
+  :root[data-theme] {
+    color-scheme: light;
+    --color-paper: #fff; --color-paper-2: #fff; --color-paper-3: #eee;
+    --color-surface: #fff; --color-shell: #fff; --color-hover: #eee;
+    --color-ink: #211d1b; --color-ink-2: #39312d; --color-muted: #605650;
+    --color-rule: #ccc; --color-rule-soft: #ddd; --color-control-border: #777;
+    --color-accent: #ad3528; --color-accent-deep: #8d2a20;
+    --color-accent-soft: #faeee9; --color-accent-ink: #fff;
+    --color-error: #ad3528; --color-success: #276940;
+  }
+  .theme-picker { display: none !important; }
+}

@@ -45,7 +45,7 @@
     ctx.clearRect(0, 0, width, height);
     ctx.strokeStyle = color;
     ctx.lineWidth = 1;
-    ctx.globalAlpha = .13;
+    ctx.globalAlpha = document.documentElement.dataset.theme === 'dark' ? .075 : .13;
     ctx.beginPath();
     const seconds = now/1000;
     for (let row = -spacing; row <= height+spacing; row += spacing) {
@@ -85,6 +85,7 @@
   document.documentElement.addEventListener('pointerleave', () => { target = 0; });
   window.addEventListener('blur', () => { target = 0; });
   window.addEventListener('resize', resize, { passive: true });
+  document.addEventListener('mandali:themechange', resize);
   document.addEventListener('visibilitychange', syncMotion);
   reduced.addEventListener('change', syncMotion);
   syncMotion();
