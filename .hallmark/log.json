@@ -4,6 +4,27 @@
     "theme": "dose",
     "shape": "app screen",
     "axes": "light/system-sans/blue",
+    "nav": "top bar, workspace tabs, catalog and status subtabs",
+    "footer": "quiet colophon",
+    "imagery": "none; actual app screens",
+    "signature": "invoice balance ledger",
+    "sections": [
+      "customers",
+      "catalog",
+      "quotations and subscriptions",
+      "invoices",
+      "payments",
+      "printable invoice"
+    ],
+    "waived": [],
+    "prompt": "Mandali Part 2, manual billing in the Part 1 blue and white system",
+    "review": "sloplint --scope app --render clean on 17 screens; manual capture review"
+  },
+  {
+    "scope": "app",
+    "theme": "dose",
+    "shape": "app screen",
+    "axes": "light/system-sans/blue",
     "nav": "top bar and workspace tabs",
     "footer": "quiet colophon",
     "imagery": "actual app screens, no stock assets",

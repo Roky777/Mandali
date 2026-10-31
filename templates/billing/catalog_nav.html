@@ -1,0 +1,1 @@
+<nav class="subtabs" aria-label="Catalog sections">{% for key, title in sections %}<a href="{% url 'catalog' workspace.pk key %}" {% if key == kind %}aria-current="page"{% endif %}>{{ title }}</a>{% endfor %}</nav>

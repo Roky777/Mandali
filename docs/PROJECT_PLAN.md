@@ -10,7 +10,7 @@ There are two business audiences: those with a website or application, and those
 
 Terminology: a **business** is a merchant using Mandali; a **customer** buys from that business. Every business owns an isolated workspace. Business administrators, staff, and end customers have different permissions. Platform administration must be separate from merchant administration.
 
-This document is a proposed implementation sequence. Part 1 is now implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Parts 2 through 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
+This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Parts 3 through 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
 
 ## Three ways to use the same billing system
 
@@ -39,6 +39,8 @@ A reusable plan checkout link creates a new checkout session for each customer. 
 **Build:** Customers; products and variants; reusable quotation templates with validity periods; daily, weekly, monthly, and yearly plan definitions; quotations; manual subscriptions; one-time invoices; quantities, prices, configured taxes, discounts, due dates, invoice numbering, printable/PDF invoices, and externally collected payment records. Preserve the original PDF's product, quotation, plan-policy, and discount requirements. Support partial payments and outstanding balances. Validate India-specific invoice requirements for the chosen business context before claiming tax readiness.
 
 **Reviewable result:** Staff can create a customer, prepare a quotation, issue an INR invoice, record a partial offline payment, and see the correct remaining balance. Totals are calculated on the server. Discount eligibility, expiry, and usage limits are enforced.
+
+**Status:** Implemented. Corrections use cancellation with a reason; credit notes remain in Part 7. Tax handling applies one configured rate per line and does not claim GST invoice compliance. Printable invoices use the browser's print-to-PDF.
 
 **Boundary:** Plan definitions and manually managed subscriptions exist; recurring scheduling comes in Part 5. Issued invoice amounts are preserved; corrections use a documented cancellation or credit-note workflow rather than silent edits.
 
@@ -127,4 +129,4 @@ Confirmed: India first, INR, businesses with or without websites, API plus hoste
 
 Stack selected for Part 1: Django 5.2 LTS with SQLite locally. Hosting is selected: Google Cloud Run, Cloud SQL PostgreSQL, Artifact Registry, and Secret Manager; see [deployment guide](GOOGLE_CLOUD.md). Still to select during later design: first supported website/API shape; initial gateway and merchant account model; supported business/tax scenarios; partial-payment policies; subscription upgrade/downgrade and proration rules; delivery provider; and business branding controls. Validate current provider capabilities, account access, and tax obligations at implementation time rather than hard-coding assumptions now.
 
-Part 1 is implemented for review. Next implementation task after that review: Part 2 only. Continue to take each later part as a separate increment.
+Parts 1 and 2 are implemented for review. Next implementation task after that review: Part 3 only. Continue to take each later part as a separate increment.

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}Invoices{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>Invoices</h1>
+<p>One-time and subscription invoices in INR, with payments collected outside Mandali.</p>
+</div>
+<a class="button" href="{% url 'invoice_create' workspace.pk %}">New invoice</a>
+</div>
+<dl class="stat-row">
+<div>
+<dt>Outstanding</dt>
+<dd>{{ summary.outstanding|inr }}<small>{{ summary.open_count }} invoice{{ summary.open_count|pluralize }} awaiting payment</small>
+</dd>
+</div>
+<div>
+<dt>Overdue</dt>
+<dd>{{ summary.overdue|inr }}<small>{{ summary.overdue_count }} invoice{{ summary.overdue_count|pluralize }} past the due date</small>
+</dd>
+</div>
+</dl>
+<nav class="subtabs" aria-label="Filter by status">{% for value, label in filters %}<a href="{% if value %}?status={{ value }}{% else %}{% url 'invoices' workspace.pk %}{% endif %}" {% if status == value %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</nav>
+{% if page.object_list %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Invoices</caption>
+<thead>
+<tr>
+<th scope="col">Invoice</th>
+<th scope="col">Customer</th>
+<th scope="col">Due</th>
+<th scope="col" class="num">Total</th>
+<th scope="col" class="num">Balance</th>
+<th scope="col">Status</th>
+</tr>
+</thead>
+<tbody>{% for invoice in page %}<tr>
+<td><a class="doc-number" href="{% url 'invoice_detail' workspace.pk invoice.pk %}"><strong>{{ invoice.label }}</strong></a></td>
+<td data-label="Customer">{{ invoice.customer.name }}</td>
+<td data-label="Due">{{ invoice.due_date|date:'d M Y'|default:'Set on issue' }}</td>
+<td class="num" data-label="Total">{{ invoice.total|inr }}</td>
+<td class="num" data-label="Balance">{% if invoice.status == 'issued' %}{{ invoice.balance|inr }}{% else %}Nothing due{% endif %}</td>
+<td data-label="Status">{% include 'billing/invoice_status.html' %}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+{% include 'billing/pagination.html' %}{% elif status %}<section class="empty">
+<h2>No invoices in this view</h2>
+<p>Nothing matches this filter right now.</p>
+<a href="{% url 'invoices' workspace.pk %}">Show all invoices</a>
+</section>{% else %}<section class="empty">
+<h2>No invoices yet</h2>
+<p>Create a one-time invoice, or create one from a confirmed subscription. Totals and taxes are calculated for you.</p>
+<a href="{% url 'invoice_create' workspace.pk %}">Create your first invoice</a>
+</section>{% endif %}{% endblock %}

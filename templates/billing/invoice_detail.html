@@ -1,0 +1,81 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}{{ invoice.label }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'invoices' workspace.pk %}">Invoices</a>
+<h1>{% if invoice.number %}Invoice {{ invoice.number }}{% else %}Draft invoice{% endif %}</h1>
+<p>{{ invoice.customer_name|default:invoice.customer.name }}{% if invoice.subscription %}, from <a href="{% url 'subscription_detail' workspace.pk invoice.subscription.pk %}">{{ invoice.subscription.number }}</a>{% endif %}</p>
+</div>
+<div class="heading-actions">{% include 'billing/invoice_status.html' %}{% if invoice.status == 'draft' %}<a class="button quiet" href="{% url 'invoice_edit' workspace.pk invoice.pk %}">Edit details</a>{% else %}<a class="button quiet" href="{% url 'invoice_print' workspace.pk invoice.pk %}">Printable invoice</a>{% endif %}</div>
+</div>
+<div class="doc-grid">
+<div>
+<dl class="essentials compact">
+<div>
+<dt>Bill to</dt>
+<dd>{% if invoice.status == 'draft' %}<a href="{% url 'customer_detail' workspace.pk invoice.customer.pk %}">{{ invoice.customer.name }}</a><small>Customer details are copied when the invoice is issued.</small>{% else %}{{ invoice.customer_name }}<small>{{ invoice.customer_email }}{% if invoice.customer_gstin %}. GSTIN {{ invoice.customer_gstin }}{% endif %}</small>{% endif %}
+</dd>
+</div>
+<div>
+<dt>Dates</dt>
+<dd>{% if invoice.issue_date %}Issued {{ invoice.issue_date|date:'d M Y' }}<small>Due {{ invoice.due_date|date:'d M Y' }}</small>{% else %}Not issued<small>Due {{ invoice.payment_terms_days }} days after issue</small>{% endif %}
+</dd>
+</div>
+<div>
+<dt>Discount</dt>
+<dd>{% if invoice.discount_label %}{{ invoice.discount_label }}{% elif invoice.discount %}{{ invoice.discount }}{% if discount_problem %}<small class="field-error">Not applied: {{ discount_problem }}</small>{% else %}<small>Checked again when you issue.</small>{% endif %}{% else %}None{% endif %}
+</dd>
+</div>{% if invoice.status == 'cancelled' %}<div>
+<dt>Cancelled</dt>
+<dd>{{ invoice.cancelled_at|date:'d M Y, H:i' }} IST<small>{{ invoice.cancel_reason }}</small>
+</dd>
+</div>{% endif %}</dl>
+<section class="activity">
+<h2>Lines</h2>
+{% include 'billing/lines.html' with parent=invoice show_discount=invoice.discount_total %}
+{% if invoice.status == 'draft' %}{% url 'invoice_line_add' workspace.pk invoice.pk as add_url %}{% include 'billing/line_form.html' with action=add_url form=line_form %}{% endif %}</section>
+{% if invoice.status != 'draft' %}<section class="activity">
+<div class="section-heading">
+<h2>Payments</h2>
+<span class="muted">Collected outside Mandali and recorded here</span>
+</div>{% if payments %}<ul class="activity-list">{% for payment in payments %}<li>
+<div>
+<strong>{% if payment.reversed_at %}<s>{{ payment.amount|inr }}</s> reversed{% else %}{{ payment.amount|inr }}{% endif %}</strong>
+<span>{{ payment.get_method_display }}, received {{ payment.received_on|date:'d M Y' }}{% if payment.reference %}, reference {{ payment.reference }}{% endif %}</span>
+<span>Recorded by {{ payment.recorded_by.first_name|default:payment.recorded_by.email }}{% if payment.note %}: {{ payment.note }}{% endif %}</span>{% if payment.reversed_at %}<span>Reversed {{ payment.reversed_at|date:'d M Y' }}: {{ payment.reversal_reason }}</span>{% endif %}</div>{% if is_admin and not payment.reversed_at %}<form class="reason-form" method="post" action="{% url 'payment_reverse' workspace.pk payment.pk %}">{% csrf_token %}<label for="reverse-{{ payment.pk }}">Reason to reverse</label>
+<input id="reverse-{{ payment.pk }}" name="reason" maxlength="200" required>
+<button class="text-button" type="submit" data-confirm="Reverse this payment and restore the balance?">Reverse</button>
+</form>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">No payments recorded yet.</p>{% endif %}</section>{% endif %}
+</div>
+<aside class="ledger" aria-label="Balance">
+<h2>Balance</h2>
+<dl>
+<div>
+<dt>Subtotal</dt>
+<dd>{{ invoice.subtotal|inr }}</dd>
+</div>{% if invoice.discount_total %}<div>
+<dt>Discount</dt>
+<dd>-{{ invoice.discount_total|inr }}</dd>
+</div>{% endif %}<div>
+<dt>Tax</dt>
+<dd>{{ invoice.tax_total|inr }}</dd>
+</div>
+<div class="ledger-total">
+<dt>Invoice total</dt>
+<dd>{{ invoice.total|inr }}</dd>
+</div>{% if invoice.status != 'draft' and invoice.status != 'cancelled' %}<div>
+<dt>Paid</dt>
+<dd>-{{ invoice.amount_paid|inr }}</dd>
+</div>
+<div class="ledger-total">
+<dt>Remaining</dt>
+<dd>{{ invoice.balance|inr }}</dd>
+</div>{% endif %}</dl>
+{% if invoice.status == 'draft' %}<form method="post" action="{% url 'invoice_issue' workspace.pk invoice.pk %}">{% csrf_token %}<button class="button full" type="submit" {% if not lines %}disabled{% endif %} data-confirm="Issue this invoice? Its number and amounts are then fixed.">Issue invoice</button>
+</form>{% if not lines %}<p class="field-help">Add a line to issue this invoice.</p>{% endif %}
+<form method="post" action="{% url 'invoice_delete' workspace.pk invoice.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Delete this draft invoice?">Delete draft</button>
+</form>{% elif invoice.status == 'issued' %}<form class="payment-form" method="post" action="{% url 'payment_record' workspace.pk invoice.pk %}" novalidate>{% csrf_token %}<h3>Record a payment</h3>{% include 'core/fields.html' with form=payment_form %}<button class="button full" type="submit">Record payment</button>
+</form>{% endif %}
+{% if is_admin and invoice.status == 'issued' and not invoice.amount_paid %}<form class="reason-form cancel-form" method="post" action="{% url 'invoice_cancel' workspace.pk invoice.pk %}">{% csrf_token %}<label for="cancel-reason">Reason to cancel</label>
+<input id="cancel-reason" name="reason" maxlength="200" required>
+<button class="text-button" type="submit" data-confirm="Cancel this invoice? Its number is kept and the amount is no longer due.">Cancel invoice</button>
+</form>{% endif %}</aside>
+</div>{% endblock %}

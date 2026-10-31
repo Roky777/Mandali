@@ -1,0 +1,1 @@
+{% if invoice.status == 'issued' and invoice.due_date < today %}<span class="tag status-overdue">Overdue</span>{% elif invoice.status == 'issued' and invoice.amount_paid %}<span class="tag status-partial">Partly paid</span>{% else %}<span class="tag status-{{ invoice.status }}">{{ invoice.get_status_display }}</span>{% endif %}

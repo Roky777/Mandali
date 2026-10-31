@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "core",
+    "billing",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

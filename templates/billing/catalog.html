@@ -1,0 +1,22 @@
+{% extends 'base.html' %}{% block title %}{{ spec.title }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>Catalog</h1>
+<p>Products, plans, taxes, discounts, and quotation templates for {{ workspace.name }}.</p>
+</div>{% if is_admin %}<a class="button" href="{% url 'catalog_create' workspace.pk kind %}">Add a {{ spec.singular }}</a>{% endif %}</div>
+{% include 'billing/catalog_nav.html' %}
+<p class="section-note">{{ spec.description }}{% if not is_admin %} Administrators manage the catalog; you can use it on quotations and invoices.{% endif %}</p>
+{% if rows %}<div class="data-table">
+<table>
+<caption class="visually-hidden">{{ spec.title }}</caption>
+<thead>
+<tr>{% for column in spec.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr>
+</thead>
+<tbody>{% for row in rows %}<tr>
+<td>{% if row.url %}<a href="{{ row.url }}"><strong>{{ row.name }}</strong></a>{% else %}<strong>{{ row.name }}</strong>{% endif %}</td>{% for label, cell in row.cells %}
+<td data-label="{{ label }}">{{ cell }}</td>{% endfor %}
+<td data-label="Status">{% if row.active %}Available{% else %}<span class="muted">Switched off</span>{% endif %}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% else %}<section class="empty">
+<h2>No {{ spec.title|lower }} yet</h2>
+<p>{{ spec.empty }}</p>{% if is_admin %}<a href="{% url 'catalog_create' workspace.pk kind %}">Add a {{ spec.singular }}</a>{% else %}<p class="muted">Ask an administrator to add one.</p>{% endif %}</section>{% endif %}{% endblock %}
