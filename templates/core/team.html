@@ -1,0 +1,48 @@
+{% extends 'base.html' %}{% block title %}Team{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>Your team</h1>
+<p>People who can work in {{ workspace.name }}.</p>
+</div>
+</div>
+{% if is_admin %}<section class="invite-strip">
+<div>
+<h2>Add a staff member</h2>
+<p>Invitations expire after 48 hours. Staff cannot change settings or invite others.</p>
+</div>
+<form method="post" action="{% url 'invite' workspace.pk %}">{% csrf_token %}<label for="id_email">Staff email address</label>
+<div class="inline-form">
+<input type="email" name="email" id="id_email" autocomplete="email" required placeholder="name@example.com">
+<button class="button" type="submit">Send invitation</button>
+</div>
+</form>
+</section>{% else %}<p class="notice">An administrator manages invitations and staff access.</p>{% endif %}
+<div class="team-table">
+<table>
+<caption class="visually-hidden">Active team members</caption>
+<thead>
+<tr>
+<th scope="col">Person</th>
+<th scope="col">Role</th>
+<th scope="col">Access</th>
+</tr>
+</thead>
+<tbody>{% for member in members %}<tr>
+<td>
+<strong>{{ member.user.first_name|default:'Team member' }}</strong>
+<span>{{ member.user.email }}</span>
+</td>
+<td data-label="Role">{{ member.get_role_display }}</td>
+<td data-label="Access">{% if is_admin and member.role == 'staff' %}<form method="post" action="{% url 'remove_staff' workspace.pk member.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Remove this staff member's access to this business?">Remove access</button>
+</form>{% else %}<span>{% if member.user_id == user.pk %}You{% else %}Active{% endif %}</span>{% endif %}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+{% if is_admin %}<section class="pending">
+<h2>Pending invitations</h2>{% if invitations %}<ul class="activity-list">{% for invitation in invitations %}<li>
+<div>
+<strong>{{ invitation.email }}</strong>
+<span>Expires {{ invitation.expires_at|date:'d M Y, H:i' }} IST</span>
+</div>
+<form method="post" action="{% url 'revoke_invite' workspace.pk invitation.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Revoke this invitation?">Revoke</button>
+</form>
+</li>{% endfor %}</ul>{% else %}<p class="muted">No pending invitations. New staff invitations will appear here.</p>{% endif %}</section>{% endif %}{% endblock %}

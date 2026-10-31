@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}Request unavailable{% endblock %}{% block content %}<section class="narrow">
+<h1>We could not accept that request</h1>
+<p>Refresh the page and try again. Your session may have expired.</p>
+<a class="button" href="{% url 'workspaces' %}">Back to workspaces</a>
+</section>{% endblock %}

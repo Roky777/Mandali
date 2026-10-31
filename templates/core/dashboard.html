@@ -1,0 +1,57 @@
+{% extends 'base.html' %}{% block title %}{{ workspace.name }} overview{% endblock %}{% block content %}
+<div class="page-heading">
+<div>
+<h1>{{ workspace.name }}</h1>
+<p>Your business workspace is taking shape.</p>
+</div>
+<span class="tag">{{ membership.get_role_display }}</span>
+</div>
+<div class="overview-grid">
+<section>
+<h2>Workspace essentials</h2>
+<dl class="essentials">
+<div>
+<dt>Business identity</dt>
+<dd>{{ workspace.legal_name }}<small>{{ workspace.billing_email }}</small>
+</dd>
+</div>
+<div>
+<dt>Currency &amp; time</dt>
+<dd>Indian rupee (INR)<small>Asia/Kolkata</small>
+</dd>
+</div>
+<div>
+<dt>People with access</dt>
+<dd>{{ team_count }} team member{{ team_count|pluralize }}<small>Administrator and staff permissions</small>
+</dd>
+</div>
+<div>
+<dt>Billing channels selected</dt>
+<dd>{% if workspace.use_api %}<span>Website / API</span>{% endif %}{% if workspace.use_hosted %}<span>Links and QR codes</span>{% endif %}{% if workspace.use_manual %}<span>Manual billing</span>{% endif %}<small>Preferences saved for upcoming billing features</small>
+</dd>
+</div>
+</dl>
+</section>
+<aside class="next-step">
+<h2>Make it your team’s workspace.</h2>
+<p>{% if is_admin %}Invite the people who will work with you. Only administrators can add or remove staff.{% else %}Your administrator manages access. You can view your business details and team here.{% endif %}</p>
+<a class="button" href="{% url 'team' workspace.pk %}">{% if is_admin %}Manage your team{% else %}View your team{% endif %}</a>
+<div class="next-part">
+<h3>Next: manual billing</h3>
+<p>Customer records, products, and invoices are coming next. Billing and payments are not enabled yet.</p>
+</div>
+</aside>
+</div>
+<section class="activity">
+<div class="section-heading">
+<h2>Workspace activity</h2>
+<span class="muted">Latest changes</span>
+</div>
+<ul class="activity-list">{% for event in activities %}<li>
+<div>
+<strong>{{ event.action }}</strong>
+<span>{{ event.actor.first_name|default:'Account removed' }}{% if event.detail %}: {{ event.detail }}{% endif %}</span>
+</div>
+<time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'d M Y, H:i' }} IST</time>
+</li>{% empty %}<li>No activity yet. Business and team changes will appear here.</li>{% endfor %}</ul>
+</section>{% endblock %}

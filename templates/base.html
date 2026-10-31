@@ -1,0 +1,40 @@
+{% load static %}<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Your Mandali business workspace: manage your business details, team access, and billing preferences.">
+<title>{% block title %}Mandali{% endblock %} | Business workspace</title>
+<link rel="icon" type="image/svg+xml" href="{% static 'core/favicon.svg' %}">
+<link rel="stylesheet" href="{% static 'core/app.css' %}">
+<script src="{% static 'core/app.js' %}" defer>
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<div class="container topbar-inner">
+<a class="wordmark" href="{% url 'workspaces' %}" aria-label="Mandali home">
+<span class="mark" aria-hidden="true">m</span>mandali<span class="wordmark-caption">Business workspace</span>
+</a>
+<div class="account-nav">{% if user.is_authenticated %}<span class="account-name">{{ user.first_name|default:user.email }}</span>
+<form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit" class="text-button">Sign out</button>
+</form>{% else %}{% if request.resolver_match.url_name == 'login' %}<a href="{% url 'signup' %}" class="button quiet">Create account</a>{% else %}<a href="{% url 'login' %}">Sign in</a>{% endif %}{% endif %}</div>
+</div>
+</header>
+{% if workspace %}<nav class="workspace-nav" aria-label="Workspace">
+<div class="container workspace-nav-inner">
+<a href="{% url 'workspaces' %}" class="workspace-switch">All workspaces</a>
+<span class="workspace-name">{{ workspace.name }}</span>
+<div class="tabs">
+<a {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %} href="{% url 'dashboard' workspace.pk %}">Overview</a>
+<a {% if request.resolver_match.url_name == 'team' %}aria-current="page"{% endif %} href="{% url 'team' workspace.pk %}">Team</a>{% if is_admin %}<a {% if request.resolver_match.url_name == 'workspace_settings' %}aria-current="page"{% endif %} href="{% url 'workspace_settings' workspace.pk %}">Settings</a>{% endif %}</div>
+</div>
+</nav>{% endif %}
+<main class="container main" id="main">{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
+<footer class="container footer">
+<span>Mandali</span>
+<span>Built around your business.</span>
+</footer>
+</body>
+</html>

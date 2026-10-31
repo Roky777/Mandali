@@ -1,0 +1,30 @@
+name: Foundation checks
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_DEBUG: '1'
+      DJANGO_SECRET_KEY: ci-only-placeholder-never-deploy-24a7f1e6b980cc58a315d4e2f7609b6d
+    strategy:
+      matrix:
+        python: ['3.12', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test
+      - run: python manage.py collectstatic --noinput
+      - name: Verify production security settings
+        env:
+          DJANGO_DEBUG: '0'
+          MANDALI_BASE_URL: https://mandali.example.com
+          DJANGO_ALLOWED_HOSTS: mandali.example.com
+        run: python manage.py check --deploy --fail-level ERROR

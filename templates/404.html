@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}Page unavailable{% endblock %}{% block content %}<section class="narrow">
+<h1>This page is unavailable</h1>
+<p>The link may have expired, or you may not have access. Ask your administrator if you need help.</p>
+<a class="button" href="{% url 'workspaces' %}">Back to workspaces</a>
+</section>{% endblock %}
