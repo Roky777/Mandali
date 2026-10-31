@@ -56,3 +56,14 @@ Before/after review used locally rendered Django pages with sample data. Thirty 
 Current captures in the Coral theme: [overview](screenshots/app-overview.png), [mobile overview](screenshots/app-overview-mobile.png), [invoice](screenshots/app-invoice.png), and [analytics](screenshots/app-analytics.png).
 
 The final source/render audit has 0 FAIL and 0 REFLEX findings. Retained warnings concern inherited CSS recipes (the old mark contrast and shared box/button rules, overridden by the new workspace stylesheet), an existing prose apostrophe, and the three intentional heading changes. Two inherited hidden-content measurement findings are waived by the tool: the closed tracking disclosure and invoice credit-note disclosure. These were visually reviewed rather than changing their working interactions. Review was performed in-thread without subagents.
+
+
+## Current interface: light and dark Coral
+
+The current shared identity uses the Mandali M mark, General Sans typography, and coral actions. Light mode uses warm paper surfaces; dark mode uses charcoal surfaces with lighter coral accents. The header offers Light, Dark, and System. The choice is saved in browser storage, follows OS changes in System mode, synchronizes across tabs, and is applied by an external head script before the page paints. Script execution remains compatible with the self-hosted CSP.
+
+The workspace picker has a centred content column, business identity cards, visible role labels, and a compact invitation/access note. The login screen has larger introductory copy and a more centred form. A background grid bends smoothly around the pointer without ripple trails. It respects reduced motion, pauses when hidden, and falls back to a static SVG grid. Print styles use light colours and hide the mesh and theme selector; QR images retain a white background.
+
+Implementation: `static/core/theme.css`, `theme.js`, `workspace-picker.css`, `mesh.css`, and `mesh.js`; shared theme controls live in `templates/core/theme_picker.html`. Page-specific styles load through the base template's `extra_styles` block.
+
+Screenshots refreshed on 31 October 2026 from the local app with generated sample data: [light workspace picker](screenshots/app-workspaces.png), [dark workspace picker](screenshots/app-workspaces-dark.png), [light overview](screenshots/app-overview.png), [dark overview](screenshots/app-overview-dark.png), [mobile overview](screenshots/app-overview-mobile.png), [analytics](screenshots/app-analytics.png), [invoice](screenshots/app-invoice.png), [subscriptions](screenshots/app-subscription.png), and [automation](screenshots/app-automation.png). Earlier review entries above are historical and describe the interface at that stage.
