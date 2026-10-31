@@ -418,6 +418,8 @@ def issue_invoice(invoice, user):
         business_address=business.address,
         business_gstin=business.gstin,
     )
+    # A zero-total invoice owes nothing from the moment it is issued.
+    settle(invoice)
     emit(invoice, "invoice.issued")
     log(business, user, "Invoice issued", f"{invoice.number}: ₹{invoice.total}")
 
@@ -579,25 +581,28 @@ def duplicate_reference(payment):
 def reverse_payment(payment, user, reason):
     if payment.method in Payment.GATEWAY_METHODS:
         raise BillingError(
-            "Gateway payments require provider reconciliation. Refund workflows are not available yet."
+            "Gateway payments are reconciled with the provider and refunded in its dashboard, not reversed here."
         )
     if not Payment.objects.filter(pk=payment.pk, reversed_at=None).update(
         reversed_at=timezone.now(), reversed_by=user, reversal_reason=reason
     ):
         raise BillingError("This payment was already reversed.")
-    # Refunds already sent cannot be undone by reversing the payment they came from.
+    # Refunds already sent cannot be undone by reversing the payment they came
+    # from. The check is part of the UPDATE, so a refund recorded at the same
+    # moment cannot slip between a check and the write.
     if not Invoice.objects.filter(
         pk=payment.invoice_id, amount_paid__gte=F("refunded") + payment.amount
-    ).exists():
-        raise BillingError("Part of this payment was already refunded, so it cannot be reversed.")
-    Invoice.objects.filter(pk=payment.invoice_id).update(
+    ).update(
         amount_paid=F("amount_paid") - payment.amount,
         status=Case(
             When(status=Invoice.Status.PAID, then=Value(Invoice.Status.ISSUED)),
             default=F("status"),
         ),
         updated_at=timezone.now(),
-    )
+    ):
+        raise BillingError("Part of this payment was already refunded, so it cannot be reversed.")
+    # Credit notes can still cover the invoice after the reversal.
+    settle(payment.invoice)
     payment.refresh_from_db()
     emit(payment.invoice, "payment.reversed", payment)
     log(

@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path("automation/", views.overview, name="recurring_overview"),
+    path("automation/generate/", views.generate_due, name="recurring_generate_due"),
     path(
         "automation/subscriptions/<int:pk>/setup/", views.setup, name="recurring_setup"
     ),

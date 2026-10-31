@@ -10,6 +10,11 @@
 </dd>
 </div>
 <div>
+<dt>Margin</dt>
+<dd>{% with m=product|margin %}{{ m.profit|inr }} per unit<small>{{ m.percent }}% of the sales price</small>{% endwith %}
+</dd>
+</div>
+<div>
 <dt>Product code</dt>
 <dd>{% if product.code %}<span class="code">{{ product.code }}</span><small>Your website uses this code on orders.</small>{% else %}None<small>Add a code to sell this product through the API.</small>{% endif %}
 </dd>

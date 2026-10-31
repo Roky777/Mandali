@@ -1,11 +1,11 @@
 from functools import wraps
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from billing import services as billing
-from billing.models import CreditNote, Invoice, Payment, Subscription
+from billing import extras, services as billing
+from billing.models import CreditNote, Invoice, Payment, Source, Subscription
 from billing.services import BillingError
 from core.security import rate_limit
 from core.views import workspace_access
@@ -38,9 +38,14 @@ def portal_login_required(view):
 
 
 def visible_invoices(request):
-    # Drafts are internal; everything issued to the customer is theirs to see.
-    return Invoice.objects.filter(customer_id__in=services.signed_in(request)).exclude(
-        status=Invoice.Status.DRAFT
+    # Drafts are internal. Hosted-checkout invoices are started by whoever
+    # holds a public link and claims an email, so an unverified buyer could
+    # place one under someone else's record: only real, paid ones are shown.
+    return (
+        Invoice.objects.filter(customer_id__in=services.signed_in(request))
+        .exclude(status=Invoice.Status.DRAFT)
+        .exclude(source_channel=Source.HOSTED, is_sandbox=True)
+        .exclude(source_channel=Source.HOSTED, amount_paid=0)
     )
 
 
@@ -113,6 +118,7 @@ def invoice(request, pk):
             "credit_notes": found.credit_notes.all(),
             "refunds": found.refunds.all(),
             "pay_url": pay_link(found),
+            "upi_due": bool(extras.upi_link(found)),
         },
     )
 
@@ -176,3 +182,12 @@ def invite(request, membership, customer_id):
     else:
         messages.error(request, "No link was sent. Add an email address, or check the email settings.")
     return redirect("customer_detail", workspace_id=membership.workspace.pk, pk=customer.pk)
+
+
+@portal_login_required
+def upi_qr(request, pk):
+    svg = extras.upi_svg(own_invoice(request, pk))
+    if svg is None:
+        raise Http404()
+    return HttpResponse(svg, content_type="image/svg+xml")
+

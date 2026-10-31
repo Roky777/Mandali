@@ -7,12 +7,15 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.utils import timezone
 from billing.models import Customer
+from core.security import count_attempt
 from .models import PortalToken
 
 logger = logging.getLogger(__name__)
 LINK_LIFETIME = timedelta(minutes=30)
 SESSION_KEY = "portal_customers"
 MAX_RECORDS_PER_REQUEST = 10
+# Per recipient, whichever addresses the requests come from.
+LINKS_PER_RECIPIENT_PER_HOUR = 3
 
 
 def digest(raw):
@@ -49,7 +52,10 @@ def request_links(email):
     The caller always shows the same response, so the form never reveals
     whether an email is known.
     """
-    customers = Customer.objects.filter(email__iexact=email.strip()).exclude(email="").select_related("workspace")
+    address = email.strip().lower()
+    if count_attempt("portal-recipient", address, 3600) > LINKS_PER_RECIPIENT_PER_HOUR:
+        return
+    customers = Customer.objects.filter(email__iexact=address).exclude(email="").select_related("workspace")
     for customer in customers[:MAX_RECORDS_PER_REQUEST]:
         send_link(customer)
 

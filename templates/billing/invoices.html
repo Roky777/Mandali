@@ -3,7 +3,10 @@
 <h1>Invoices</h1>
 <p>One-time and subscription invoices in INR, with manual payments and sandbox gateway checkout. Financial summaries exclude sandbox invoices.</p>
 </div>
+<div class="heading-actions">
+<a class="button quiet" href="{% url 'invoice_bank_import' workspace.pk %}">Match bank statement</a>
 <a class="button" href="{% url 'invoice_create' workspace.pk %}">New invoice</a>
+</div>
 </div>
 <dl class="stat-row">
 <div>
@@ -37,7 +40,8 @@
 <td data-label="Due">{{ invoice.due_date|date:'d M Y'|default:'Set on issue' }}</td>
 <td class="num" data-label="Total">{{ invoice.total|inr }}</td>
 <td class="num" data-label="Balance">{% if invoice.status == 'issued' %}{{ invoice.balance|inr }}{% else %}Nothing due{% endif %}</td>
-<td data-label="Status">{% include 'billing/invoice_status.html' %}</td>
+<td data-label="Status">{% include 'billing/invoice_status.html' %}{% if invoice.status == 'issued' and invoice.due_date < today and invoice.customer_email %}<form method="post" action="{% url 'invoice_email' workspace.pk invoice.pk %}">{% csrf_token %}<input type="hidden" name="kind" value="reminder"><button class="text-button" type="submit">Remind</button>
+</form>{% endif %}</td>
 </tr>{% endfor %}</tbody>
 </table>
 </div>

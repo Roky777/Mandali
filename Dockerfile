@@ -15,6 +15,7 @@ COPY integrations ./integrations
 COPY recurring ./recurring
 COPY portal ./portal
 COPY reports ./reports
+COPY operations ./operations
 COPY templates ./templates
 COPY static ./static
 COPY manage.py gunicorn.conf.py ./

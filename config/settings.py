@@ -52,8 +52,10 @@ INSTALLED_APPS = [
     "recurring",
     "portal",
     "reports",
+    "operations",
 ]
 MIDDLEWARE = [
+    "operations.monitoring.RequestTimingMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -149,3 +151,23 @@ PAYMENT_ENCRYPTION_KEYS = os.getenv("PAYMENT_ENCRYPTION_KEYS", "")
 MANDALI_ALLOW_LOCAL_INTEGRATIONS = (
     DEBUG and os.getenv("MANDALI_ALLOW_LOCAL_INTEGRATIONS", "0") == "1"
 )
+# Structured logs on stdout, one JSON object per line, for Cloud Logging.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"json": {"()": "operations.monitoring.JsonFormatter"}},
+    "handlers": {"stdout": {"class": "logging.StreamHandler", "formatter": "json"}},
+    "root": {"handlers": ["stdout"], "level": "WARNING"},
+    "loggers": {
+        "mandali.requests": {
+            "handlers": ["stdout"],
+            "level": os.getenv("MANDALI_REQUEST_LOG_LEVEL", "WARNING" if DEBUG else "INFO"),
+            "propagate": False,
+        },
+        "django.request": {"handlers": ["stdout"], "level": "ERROR", "propagate": False},
+    },
+}
+# Controlled pilot: comma-separated emails and @domains allowed to create
+# accounts and businesses. Empty means open signup.
+MANDALI_PILOT_ALLOWLIST = os.getenv("MANDALI_PILOT_ALLOWLIST", "")
+

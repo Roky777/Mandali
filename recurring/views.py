@@ -20,11 +20,16 @@ def overview(request, membership):
     schedules = Schedule.objects.filter(
         subscription__workspace=membership.workspace
     ).select_related("subscription__customer", "mandate")
+    due = schedules.filter(
+        enabled=True, mode="invoice", subscription__status="active", next_bill_on__lte=timezone.localdate()
+    ).select_related("subscription__plan")
     return render(
         request,
         "recurring/overview.html",
         {
             **context(membership),
+            "due": due[:100],
+            "due_count": due.count(),
             "schedules": schedules[:100],
             "notices": Notice.objects.filter(
                 invoice__workspace=membership.workspace
@@ -210,3 +215,28 @@ def retry_notice(request, membership, pk):
             str(notice.pk),
         )
     return redirect("recurring_overview", workspace_id=membership.workspace.pk)
+
+
+@require_POST
+@workspace_access(admin=True)
+def generate_due(request, membership):
+    """Bill every invoice schedule due today, now, instead of waiting for the worker."""
+    today = timezone.localdate()
+    due = Schedule.objects.filter(
+        subscription__workspace=membership.workspace, enabled=True, mode="invoice",
+        subscription__status="active", next_bill_on__lte=today,
+    ).values_list("pk", flat=True)
+    created = 0
+    for schedule_id in list(due[:200]):
+        # Catch up missed periods one at a time; each period is unique per schedule.
+        for _ in range(12):
+            try:
+                cycle = services.bill_one(schedule_id, today)
+            except BillingError:
+                break
+            if cycle is None:
+                break
+            created += 1
+    messages.success(request, f"{created} invoice{'s' if created != 1 else ''} generated.")
+    return redirect("recurring_overview", workspace_id=membership.workspace.pk)
+

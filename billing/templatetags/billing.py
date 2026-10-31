@@ -34,3 +34,28 @@ def compact_inr(value):
         if abs(amount) >= threshold:
             return f"₹{amount/threshold:.1f}{label}"
     return f"₹{amount:.0f}"
+
+
+@register.simple_tag
+def gst_split(invoice):
+    """Split invoice tax into CGST and SGST within one state, IGST across states.
+
+    The supplier state is the first two digits of the business GSTIN; the
+    place of supply is taken from the customer GSTIN when there is one.
+    """
+    tax = Decimal(invoice.tax_total or 0)
+    seller = (invoice.business_gstin or "")[:2]
+    buyer = (invoice.customer_gstin or "")[:2]
+    if seller and buyer and seller != buyer:
+        return {"igst": tax}
+    half = (tax / 2).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return {"cgst": half, "sgst": tax - half}
+
+
+@register.filter
+def margin(product):
+    """Profit per unit and margin percentage from sales and cost price."""
+    profit = product.sales_price - product.cost_price
+    percent = (profit / product.sales_price * 100).quantize(Decimal("0.1")) if product.sales_price else Decimal("0")
+    return {"profit": profit, "percent": percent}
+

@@ -2,9 +2,9 @@
 <div>
 <a class="back-link" href="{% url 'invoices' workspace.pk %}">Invoices</a>
 <h1>{% if invoice.number %}Invoice {{ invoice.number }}{% else %}Draft invoice{% endif %}</h1>
-<p>{{ invoice.customer_name|default:invoice.customer.name }}{% if invoice.subscription %}, from <a href="{% url 'subscription_detail' workspace.pk invoice.subscription.pk %}">{{ invoice.subscription.number }}</a>{% endif %}</p>
+<p>{% if late_payer %}<span class="tag status-overdue">Late payer</span> {% endif %}{{ invoice.customer_name|default:invoice.customer.name }}{% if invoice.subscription %}, from <a href="{% url 'subscription_detail' workspace.pk invoice.subscription.pk %}">{{ invoice.subscription.number }}</a>{% endif %}</p>
 </div>
-<div class="heading-actions">{% if invoice.status == "issued" or invoice.status == "paid" %}{% if invoice.customer_email %}<form method="post" action="{% url 'invoice_email' workspace.pk invoice.pk %}">{% csrf_token %}<button class="button quiet" type="submit">Email invoice</button></form>{% endif %}{% endif %}{% if invoice.is_sandbox %}<span class="tag">Sandbox</span>{% if invoice.status == 'issued' and not automatic_cycle %}<a class="button quiet" href="{% url 'checkout_link_create' workspace.pk %}?invoice={{ invoice.pk }}">Create payment link</a>{% endif %}{% endif %}{% include 'billing/invoice_status.html' %}{% if invoice.status == 'draft' %}<a class="button quiet" href="{% url 'invoice_edit' workspace.pk invoice.pk %}">Edit details</a>{% else %}<a class="button quiet" href="{% url 'invoice_print' workspace.pk invoice.pk %}">Printable invoice</a>{% endif %}</div>
+<div class="heading-actions">{% if invoice.status == "issued" or invoice.status == "paid" %}{% if invoice.customer_email %}<form method="post" action="{% url 'invoice_email' workspace.pk invoice.pk %}">{% csrf_token %}{% if invoice.status == 'issued' and invoice.due_date < today %}<input type="hidden" name="kind" value="reminder"><button class="button" type="submit">Send reminder</button>{% else %}<button class="button quiet" type="submit">Email invoice</button>{% endif %}</form>{% endif %}{% if whatsapp_url %}<a class="button quiet" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Share on WhatsApp</a>{% endif %}{% endif %}{% if invoice.is_sandbox %}<span class="tag">Sandbox</span>{% if invoice.status == 'issued' and not automatic_cycle %}<a class="button quiet" href="{% url 'checkout_link_create' workspace.pk %}?invoice={{ invoice.pk }}">Create payment link</a>{% endif %}{% endif %}{% include 'billing/invoice_status.html' %}{% if invoice.status == 'draft' %}<a class="button quiet" href="{% url 'invoice_edit' workspace.pk invoice.pk %}">Edit details</a>{% else %}<a class="button quiet" href="{% url 'invoice_print' workspace.pk invoice.pk %}">Printable invoice</a>{% endif %}</div>
 </div>
 <div class="doc-grid">
 <div>
@@ -21,7 +21,7 @@
 </div>
 <div>
 <dt>Billing period</dt><dd>{% if invoice.billing_cycle %}{{ invoice.billing_cycle.starts_on|date:'d M Y' }} to {{ invoice.billing_cycle.ends_before|date:'d M Y' }} (exclusive){% else %}One-time / manually created invoice{% endif %}</dd></div><div><dt>Discount</dt>
-<dd>{% if invoice.discount_label %}{{ invoice.discount_label }}{% elif invoice.discount %}{{ invoice.discount }}{% if discount_problem %}<small class="field-error">Not applied: {{ discount_problem }}</small>{% else %}<small>Checked again when you issue.</small>{% endif %}{% else %}None{% endif %}
+<dd>{% if invoice.discount_label %}{{ invoice.discount_label }}{% if invoice.discount %}<small>Used {{ invoice.discount.times_used }}{% if invoice.discount.usage_limit is not None %} of {{ invoice.discount.usage_limit }}{% endif %} time{{ invoice.discount.times_used|pluralize }}</small>{% endif %}{% elif invoice.discount %}{{ invoice.discount }}{% if discount_problem %}<small class="field-error">Not applied: {{ discount_problem }}</small>{% else %}<small>Checked again when you issue.</small>{% endif %}{% else %}None{% endif %}
 </dd>
 </div>{% if invoice.external_id %}<div>
 <dt>Source</dt>
@@ -80,8 +80,14 @@
 <dt>Billing period</dt><dd>{% if invoice.billing_cycle %}{{ invoice.billing_cycle.starts_on|date:'d M Y' }} to {{ invoice.billing_cycle.ends_before|date:'d M Y' }} (exclusive){% else %}One-time / manually created invoice{% endif %}</dd></div><div><dt>Discount</dt>
 <dd>-{{ invoice.discount_total|inr }}</dd>
 </div>{% endif %}<div>
-<dt>Tax</dt>
-<dd>{{ invoice.tax_total|inr }}</dd>
+{% gst_split invoice as gst %}{% if not invoice.tax_total %}<dt>Tax</dt>
+<dd>{{ invoice.tax_total|inr }}</dd>{% elif gst.igst is not None %}<dt>IGST</dt>
+<dd>{{ gst.igst|inr }}</dd>{% else %}<dt>CGST</dt>
+<dd>{{ gst.cgst|inr }}</dd>
+</div>
+<div>
+<dt>SGST</dt>
+<dd>{{ gst.sgst|inr }}</dd>{% endif %}
 </div>
 <div class="ledger-total">
 <dt>Invoice total</dt>
@@ -106,7 +112,7 @@
 {% if invoice.status == 'draft' %}<form method="post" action="{% url 'invoice_issue' workspace.pk invoice.pk %}">{% csrf_token %}<button class="button full" type="submit" {% if not lines %}disabled{% endif %} data-confirm="Issue this invoice? Its number and amounts are then fixed.">Issue invoice</button>
 </form>{% if not lines %}<p class="field-help">Add a line to issue this invoice.</p>{% endif %}
 <form method="post" action="{% url 'invoice_delete' workspace.pk invoice.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Delete this draft invoice?">Delete draft</button>
-</form>{% elif automatic_cycle %}<p class="field-help">Collection is managed by the authorized provider mandate.</p><a href="{% url 'recurring_detail' workspace.pk automatic_cycle.schedule_id %}">Reconcile in Automation</a>{% elif invoice.status == 'issued' %}<form class="payment-form" method="post" action="{% url 'payment_record' workspace.pk invoice.pk %}" novalidate>{% csrf_token %}<h3>Record a payment</h3>{% include 'core/fields.html' with form=payment_form %}<button class="button full" type="submit">Record payment</button>
+</form>{% elif automatic_cycle %}<p class="field-help">Collection is managed by the authorized provider mandate.</p><a href="{% url 'recurring_detail' workspace.pk automatic_cycle.schedule_id %}">Reconcile in Automation</a>{% elif invoice.status == 'issued' %}{% if upi_due %}<div class="upi-box"><img src="{% url 'invoice_upi_qr' workspace.pk invoice.pk %}" width="160" height="160" alt="UPI QR code for {{ invoice.balance|inr }}"><p class="field-help">Customers scan with any UPI app to pay {{ invoice.balance|inr }} to {{ workspace.upi_id }}. Record the payment when it arrives.</p></div>{% endif %}<form class="payment-form" method="post" action="{% url 'payment_record' workspace.pk invoice.pk %}" novalidate>{% csrf_token %}<h3>Record a payment</h3>{% include 'core/fields.html' with form=payment_form %}<button class="button full" type="submit">Record payment</button>
 </form>{% endif %}
 {% if is_admin and not invoice.is_sandbox and invoice.refund_due %}<form class="payment-form" method="post" action="{% url 'refund_create' workspace.pk invoice.pk %}" novalidate>{% csrf_token %}<h3>Record a refund</h3>{% include 'core/fields.html' with form=refund_form %}<button class="button full" type="submit">Record refund</button>
 </form>{% endif %}

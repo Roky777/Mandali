@@ -4,6 +4,7 @@ from functools import wraps
 
 from django.conf import settings
 from django.db.models import F
+from django.utils import timezone
 from ipaddress import ip_address
 from django.shortcuts import render
 
@@ -33,7 +34,9 @@ def count_attempt(scope, identity, seconds):
     AuthRateBucket.objects.filter(pk=bucket.pk, window__lt=window).update(
         window=window, attempts=0
     )
-    AuthRateBucket.objects.filter(pk=bucket.pk).update(attempts=F("attempts") + 1)
+    AuthRateBucket.objects.filter(pk=bucket.pk).update(
+        attempts=F("attempts") + 1, touched_at=timezone.now()
+    )
     bucket.refresh_from_db(fields=["attempts"])
     return bucket.attempts
 

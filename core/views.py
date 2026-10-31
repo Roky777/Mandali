@@ -24,6 +24,7 @@ from .forms import (
 )
 from .models import User, Workspace, Membership, Invitation, Activity
 from .security import rate_limit
+from operations import pilot
 from billing.services import billing_summary
 
 logger = logging.getLogger(__name__)
@@ -130,6 +131,13 @@ def workspaces(request):
 
 @login_required
 def workspace_create(request):
+    if not pilot.allowed(request.user.email):
+        return render(
+            request,
+            "core/error.html",
+            {"title": "Private pilot", "explanation": pilot.MESSAGE},
+            status=403,
+        )
     form = WorkspaceForm(
         request.POST or None, initial={"billing_email": request.user.email}
     )

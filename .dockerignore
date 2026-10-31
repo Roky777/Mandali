@@ -16,6 +16,8 @@
 !portal/**
 !reports/
 !reports/**
+!operations/
+!operations/**
 !templates/
 !templates/**
 !static/

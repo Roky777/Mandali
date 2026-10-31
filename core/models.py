@@ -1,6 +1,7 @@
 import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 from django.db.models.functions import Lower
 
 
@@ -47,6 +48,7 @@ class Workspace(models.Model):
     billing_email = models.EmailField()
     address = models.TextField(max_length=500)
     gstin = models.CharField("GSTIN", max_length=15, blank=True)
+    upi_id = models.CharField("UPI ID", max_length=80, blank=True)
     website = models.URLField(blank=True)
     use_api = models.BooleanField(default=False)
     use_hosted = models.BooleanField(default=True)
@@ -109,3 +111,5 @@ class AuthRateBucket(models.Model):
     key = models.CharField(max_length=64, unique=True)
     window = models.BigIntegerField()
     attempts = models.PositiveIntegerField(default=0)
+    # Lets old buckets be pruned without knowing each scope's window length.
+    touched_at = models.DateTimeField(default=timezone.now)

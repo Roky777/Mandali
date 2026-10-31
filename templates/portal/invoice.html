@@ -69,5 +69,5 @@
 <dt>Due back to you</dt>
 <dd>{{ invoice.refund_due|inr }}</dd>
 </div>{% endif %}{% endif %}</dl>
-{% if pay_url %}<a class="button full" href="{{ pay_url }}">Pay online</a>{% elif invoice.status == 'issued' %}<p class="field-help">To pay, follow the instructions from {{ invoice.business_name }} or ask them for a payment link.</p>{% endif %}</aside>
+{% if upi_due %}<div class="upi-box"><img src="{% url 'portal_upi_qr' invoice.pk %}" width="180" height="180" alt="UPI QR code for {{ invoice.balance|inr }}"><p class="field-help">Scan with any UPI app to pay {{ invoice.balance|inr }}. Use the note {{ invoice.number }}.</p></div>{% endif %}{% if pay_url %}<a class="button full" href="{{ pay_url }}">Pay online</a>{% elif invoice.status == 'issued' %}<p class="field-help">To pay, follow the instructions from {{ invoice.business_name }} or ask them for a payment link.</p>{% endif %}</aside>
 </div>{% endblock %}

@@ -1,8 +1,11 @@
+from datetime import date
+from decimal import Decimal
+from django.core import signing
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q, Sum
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -10,7 +13,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from core.models import Membership
 from core.views import context, workspace_access
-from . import services
+from . import extras, services
 from .forms import (
     CreditNoteForm,
     RefundForm,
@@ -43,7 +46,7 @@ from .models import (
     TemplateLine,
 )
 from .services import BillingError, log
-from .templatetags.billing import inr
+from .templatetags.billing import inr, margin
 
 PAGE_SIZE = 25
 
@@ -123,6 +126,7 @@ def customers(request, membership):
         {
             **context(membership),
             "page": page,
+            "late_payers": extras.late_payer_ids(membership.workspace, timezone.localdate()),
             "query": query,
             "query_string": query_string(q=query),
         },
@@ -178,8 +182,8 @@ CATALOG = {
         "singular": "product",
         "description": "What you sell. Variants adjust a product's price.",
         "empty": "Add the services or goods you bill for. Products appear as lines on quotations and invoices.",
-        "columns": ["Product", "Code", "Type", "Sales price", "Tax", "Status"],
-        "cells": lambda o: [o.code or "None", o.get_kind_display(), inr(o.sales_price), o.tax or "No tax"],
+        "columns": ["Product", "Code", "Type", "Sales price", "Margin", "Tax", "Status"],
+        "cells": lambda o: [o.code or "None", o.get_kind_display(), inr(o.sales_price), f"{inr(o.sales_price - o.cost_price)} ({margin(o)['percent']}%)", o.tax or "No tax"],
         "related": ["tax"],
     },
     "plans": {
@@ -666,6 +670,9 @@ def invoice_context(membership, invoice):
         "payments": payments,
         "credit_notes": invoice.credit_notes.select_related("created_by"),
         "credit_left": invoice.total - invoice.credited,
+        "upi_due": bool(extras.upi_link(invoice)),
+        "whatsapp_url": extras.whatsapp_link(invoice) if invoice.status == Invoice.Status.ISSUED else None,
+        "late_payer": invoice.customer_id in extras.late_payer_ids(membership.workspace, timezone.localdate()),
         "refunds": invoice.refunds.select_related("recorded_by"),
         "discount_problem": problem,
         "today": timezone.localdate(),
@@ -894,13 +901,70 @@ def invoice_email(request, membership, pk):
         messages.error(request, "This invoice has been emailed recently. Please try again later.")
     else:
         portal_url = settings.MANDALI_BASE_URL + reverse("portal_request")
+        reminder = request.POST.get("kind") == "reminder"
         body = f"Invoice {invoice.number} from {invoice.business_name}\nTotal: INR {invoice.total}\nOutstanding: INR {invoice.balance}\nDue: {invoice.due_date}\n\nView and print your invoice: {portal_url}\nRequest a secure link using this email address."
+        if invoice.workspace.upi_id and invoice.balance > 0:
+            body += f"\n\nPay by UPI to {invoice.workspace.upi_id} with the note {invoice.number}."
+        subject = f"Invoice {invoice.number} from {invoice.business_name}"
+        if reminder:
+            subject = f"Reminder: invoice {invoice.number} is overdue"
+            body = f"This is a reminder that INR {invoice.balance} on invoice {invoice.number} was due on {invoice.due_date}.\n\n" + body
         try:
-            send_mail(f"Invoice {invoice.number} from {invoice.business_name}", body, settings.DEFAULT_FROM_EMAIL, [invoice.customer_email], fail_silently=False)
+            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [invoice.customer_email], fail_silently=False)
         except Exception:
             logging.getLogger(__name__).error("Invoice email delivery failed.")
             messages.error(request, "Email could not be sent. Please try again later.")
         else:
-            log(membership.workspace, request.user, "Invoice emailed", invoice.number)
-            messages.success(request, "Invoice email accepted for delivery.")
+            log(membership.workspace, request.user, "Payment reminder sent" if reminder else "Invoice emailed", invoice.number)
+            messages.success(request, "Reminder sent." if reminder else "Invoice email accepted for delivery.")
     return redirect("invoice_detail", workspace_id=membership.workspace.pk, pk=invoice.pk)
+
+
+@workspace_access()
+def invoice_upi_qr(request, membership, pk):
+    invoice = get_object_or_404(Invoice.objects.select_related("workspace"), pk=pk, workspace=membership.workspace)
+    svg = extras.upi_svg(invoice)
+    if svg is None:
+        raise Http404("No UPI payment is due on this invoice.")
+    return HttpResponse(svg, content_type="image/svg+xml")
+
+
+@workspace_access()
+def bank_import(request, membership):
+    """Upload a bank statement CSV, review suggested matches, then record them."""
+    rows, error = [], None
+    if request.method == "POST" and request.POST.get("step") == "record":
+        recorded = 0
+        for key in request.POST.getlist("row"):
+            try:
+                row = signing.loads(key, salt="bank-import", max_age=3600)
+                invoice = Invoice.objects.get(pk=row["invoice_id"], workspace=membership.workspace)
+                payment = services.record_payment(
+                    invoice, request.user, Decimal(row["amount"]), Payment.Method.BANK,
+                    date.fromisoformat(row["date"]), reference=row["reference"], note="Matched from bank statement",
+                )
+                recorded += 1
+            except (signing.BadSignature, Invoice.DoesNotExist, BillingError, KeyError, ValueError):
+                continue
+        messages.success(request, f"{recorded} payment{'s' if recorded != 1 else ''} recorded from the statement.")
+        return redirect(url("invoices", membership))
+    if request.method == "POST":
+        upload = request.FILES.get("statement")
+        if upload is None or upload.size > 1_000_000:
+            error = "Choose a CSV file under 1 MB."
+        else:
+            try:
+                rows = extras.match(membership.workspace, extras.read_statement(upload.read().decode("utf-8-sig", "replace")))
+            except ValueError as problem:
+                error = str(problem)
+            for row in rows:
+                if row["invoice_id"]:
+                    row["token"] = signing.dumps(
+                        {k: row[k] for k in ("invoice_id", "amount", "date", "reference")}, salt="bank-import"
+                    )
+    return render(
+        request,
+        "billing/bank_import.html",
+        {**context(membership), "rows": rows, "error": error, "matched": sum(1 for r in rows if r.get("invoice_id"))},
+    )
+

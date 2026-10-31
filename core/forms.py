@@ -1,7 +1,9 @@
+import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import User, Workspace
 from .validators import clean_gstin
+from operations import pilot
 
 
 class SignupForm(UserCreationForm):
@@ -14,6 +16,8 @@ class SignupForm(UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
+        if not pilot.allowed(email):
+            raise forms.ValidationError(pilot.MESSAGE)
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError(
                 "An account already uses this email. Sign in or reset your password."
@@ -37,6 +41,7 @@ class WorkspaceForm(forms.ModelForm):
             "billing_email",
             "address",
             "gstin",
+            "upi_id",
             "website",
             "use_api",
             "use_hosted",
@@ -48,6 +53,7 @@ class WorkspaceForm(forms.ModelForm):
             "billing_email": "Billing email",
             "address": "Billing address",
             "gstin": "GSTIN (optional)",
+            "upi_id": "UPI ID for invoice QR codes (optional)",
             "website": "Website (optional)",
             "use_api": "Website / API integration",
             "use_hosted": "Shareable links and QR codes",
@@ -64,6 +70,12 @@ class WorkspaceForm(forms.ModelForm):
 
     def clean_gstin(self):
         return clean_gstin(self.cleaned_data["gstin"])
+
+    def clean_upi_id(self):
+        value = self.cleaned_data["upi_id"].strip()
+        if value and not re.fullmatch(r"[A-Za-z0-9._-]{2,64}@[A-Za-z0-9.-]{2,64}", value):
+            raise forms.ValidationError("Use a UPI ID like yourbusiness@okaxis.")
+        return value
 
     def clean(self):
         data = super().clean()
