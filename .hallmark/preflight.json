@@ -1,0 +1,20 @@
+{
+  "scanned": "2026-10-31",
+  "findings": {
+    "source": "README.md and docs/PROJECT_PLAN.md; documentation-only repository",
+    "fonts": "none inherited",
+    "palette": "user prefers crisp blue and white",
+    "motion": "none inherited",
+    "framework": "Django 5.2 LTS selected for Part 1"
+  },
+  "preserve": [
+    "India-first scope",
+    "INR",
+    "manual/API/hosted preferences"
+  ],
+  "introduce": [
+    "top bar and workspace tabs",
+    "business essentials ledger",
+    "accessible server-side forms"
+  ]
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "scope": "app",
+    "theme": "dose",
+    "shape": "app screen",
+    "axes": "light/system-sans/blue",
+    "nav": "top bar and workspace tabs",
+    "footer": "quiet colophon",
+    "imagery": "actual app screens, no stock assets",
+    "signature": "workspace essentials ledger",
+    "sections": [
+      "essentials",
+      "team access",
+      "activity"
+    ],
+    "waived": [],
+    "prompt": "Mandali Part 1, India-first onboarding and isolated business workspaces; user prefers blue and white",
+    "review": "finish reviewer ship; login responsive sweep clean"
+  }
+]

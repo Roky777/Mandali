@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block title %}Staff invitation{% endblock %}{% block content %}<section class="narrow">
+<h1>Staff invitation created</h1>
+<p>The invitation for {{ invited_email }} expires in 48 hours. Share it only with the intended recipient. Creating a replacement invitation revokes their previous one.</p>
+<label for="invite-link">Invitation link</label>
+<input id="invite-link" type="text" value="{{ invite_link }}" readonly autocomplete="off">
+<p class="field-help">This link is shown once. Copy it before leaving this page.</p>
+<a class="button" href="{% url 'team' workspace.pk %}">Back to your team</a>
+</section>{% endblock %}

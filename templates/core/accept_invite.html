@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}Join {{ invitation.workspace.name }}{% endblock %}{% block content %}<section class="narrow">
+<h1>Join {{ invitation.workspace.name }}</h1>
+<p>You have been invited as staff using {{ invitation.email }}.</p>{% if account_exists and not user.is_authenticated %}<p>Sign in with the invited email address to accept.</p>
+<a class="button" href="{% url 'login' %}?next={{ request.path|urlencode }}">Sign in to join</a>{% else %}<form method="post">{% csrf_token %}{% if form %}{% include 'core/fields.html' %}{% endif %}<button class="button" type="submit">Join workspace</button>
+</form>{% endif %}</section>{% endblock %}

@@ -10,7 +10,7 @@ There are two business audiences: those with a website or application, and those
 
 Terminology: a **business** is a merchant using Mandali; a **customer** buys from that business. Every business owns an isolated workspace. Business administrators, staff, and end customers have different permissions. Platform administration must be separate from merchant administration.
 
-This document is a proposed implementation sequence. No application features have been implemented. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
+This document is a proposed implementation sequence. Part 1 is now implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Parts 2 through 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
 
 ## Three ways to use the same billing system
 
@@ -32,7 +32,7 @@ A reusable plan checkout link creates a new checkout session for each customer. 
 
 **Reviewable result:** An administrator can create a business workspace, configure it, and add staff. Two businesses cannot access each other's data. Main navigation and the onboarding screens are usable on mobile and desktop.
 
-**Boundary:** No real payments, automatic charges, or complete billing engine in this part. Select the stack in this part; it has not been selected by this plan.
+**Boundary:** No real payments, automatic charges, or complete billing engine in this part. The foundation implementation selects Django 5.2 LTS with server-rendered pages and SQLite for local development.
 
 ### Part 2: Manual billing and the shared billing core
 
@@ -125,6 +125,6 @@ For this plan, OpenPay means getopenpay.com, the subscription billing and paymen
 
 Confirmed: India first, INR, businesses with or without websites, API plus hosted links/QR plus manual workflows, automated and manual invoicing, optional automated collection, gateway recommendations and later automatic routing, incremental delivery.
 
-Still to select during design: stack and hosting; first supported website/API shape; initial gateway and merchant account model; supported business/tax scenarios; partial-payment policies; subscription upgrade/downgrade and proration rules; delivery provider; and business branding controls. Validate current provider capabilities, account access, and tax obligations at implementation time rather than hard-coding assumptions now.
+Stack selected for Part 1: Django 5.2 LTS with SQLite locally. Hosting is not yet selected. Still to select during later design: first supported website/API shape; initial gateway and merchant account model; supported business/tax scenarios; partial-payment policies; subscription upgrade/downgrade and proration rules; delivery provider; and business branding controls. Validate current provider capabilities, account access, and tax obligations at implementation time rather than hard-coding assumptions now.
 
-Next implementation task: Part 1 only. After its review, take Part 2 as a separate increment.
+Part 1 is implemented for review. Next implementation task after that review: Part 2 only. Continue to take each later part as a separate increment.

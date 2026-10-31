@@ -2,13 +2,13 @@
 
 ### Automated and manual billing, with or without a website.
 
-Mandali is an India-first invoicing and subscription billing platform being planned for businesses with or without a website. It brings products, plans, quotations, one-time and recurring invoices, payment tracking, and reporting into one workspace, with INR as the initial currency.
+Mandali is an India-first invoicing and subscription billing platform being developed for businesses with or without a website. It brings products, plans, quotations, one-time and recurring invoices, payment tracking, and reporting into one workspace, with INR as the initial currency.
 
 Businesses with websites connect through authorized APIs. Businesses without websites share Mandali-hosted checkout links and QR codes with their customers. Both can also use manual billing and record externally collected payments. All channels use the same billing records.
 
 The project is based on the **Subscription Management System** hackathon problem statement and its Brightloop Software scenario, where spreadsheets, manual invoices, and missed renewals make running a subscription business difficult.
 
-> **Project status:** Planning stage. This README documents the intended product and requirements. Application code, technology choices, and setup instructions have not been added yet. Features below describe planned capabilities.
+> **Project status:** Part 1 foundation is implemented: email-based accounts, password recovery, business onboarding, isolated workspaces, administrator/staff access, staff invitations, and business settings. Billing, checkout, API integration, automation, and gateway routing remain planned. See [foundation setup and architecture](docs/FOUNDATION.md).
 
 See the [phased project plan](docs/PROJECT_PLAN.md) for the revised scope, acceptance criteria, and build order. We will implement and review one part at a time.
 
@@ -103,9 +103,9 @@ Eligible discounts should appear automatically on the next invoice and stop appl
 
 ## Development roadmap
 
-Each part has a reviewable result and acceptance criteria in the [project plan](docs/PROJECT_PLAN.md). All implementation parts remain pending.
+Each part has a reviewable result and acceptance criteria in the [project plan](docs/PROJECT_PLAN.md). Part 1 is implemented in this change; Parts 2 through 8 remain pending.
 
-- [ ] **Part 1:** Foundation, business onboarding, access control, and design direction.
+- [x] **Part 1:** Foundation, business onboarding, access control, and design direction.
 - [ ] **Part 2:** Manual billing, customers, products, quotations, plans, taxes, and discounts.
 - [ ] **Part 3:** Hosted checkout, shareable links, QR codes, and one sandbox gateway.
 - [ ] **Part 4:** Website/API integration and synchronization.
@@ -120,7 +120,7 @@ Each part has a reviewable result and acceptance criteria in the [project plan](
 - [Cloudflare security-audit skill](https://github.com/cloudflare/security-audit-skill) will guide structured security reviews of implemented code.
 - [OpenPay](https://www.getopenpay.com/) and [Chargebee](https://www.chargebee.com/) are product references for billing, hosted checkout, and routing workflows. Mandali will use its own design and implementation.
 
-The skills have been reviewed as planning inputs; installation, interface work, and code audits have not started. Security and correctness checks accompany every implementation part.
+Hallmark guided the responsive blue-and-white interface. Cloudflare’s skill guided a focused source review of workspace permissions, invitations, and rate limiting. Reference revisions and review limits are recorded in [design direction](docs/DESIGN.md). A full pre-release security audit remains planned.
 
 ## Getting started
 
@@ -131,8 +131,29 @@ git clone https://github.com/Roky777/Mandali.git
 cd Mandali
 ```
 
-There is no runnable application yet. Installation steps, environment configuration, database setup, and development commands will be documented once the implementation is added.
+The foundation uses Python 3.12+ and Django 5.2 LTS. Start locally:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export DJANGO_DEBUG=1
+python manage.py migrate
+python manage.py runserver
+```
+
+Open http://127.0.0.1:8000/signup/ to create your account and business workspace. Invitation and reset emails appear in the server terminal during local development. Real inbox delivery requires SMTP configuration.
+
+Run `python manage.py test` to check account flows, tenant isolation, permissions, invitations, and password recovery. See [foundation documentation](docs/FOUNDATION.md) for environment variables, deployment preparation, and current limits.
 
 ## Requirements source
 
 This scope was derived from `Subscription_Management_System.pdf`, titled **Subscription Management System**, which describes the Brightloop Software billing scenario. The PDF was supplied separately and is not included in this initial repository commit.
+
+## Foundation preview
+
+The screenshots use dummy business and account data.
+
+![Business workspace overview](docs/screenshots/overview.png)
+
+[View the phone team screen](docs/screenshots/team-mobile.png).

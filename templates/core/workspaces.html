@@ -1,0 +1,23 @@
+{% extends 'base.html' %}{% block title %}Your workspaces{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>Your workspaces</h1>
+<p>Choose the business you want to work on.</p>
+</div>
+<a class="button" href="{% url 'workspace_create' %}">Add a business</a>
+</div>
+{% if memberships %}<div class="workspace-list">{% for item in memberships %}<a class="workspace-row" href="{% url 'dashboard' item.workspace.pk %}">
+<span class="business-initial" aria-hidden="true">{{ item.workspace.name|slice:':1' }}</span>
+<span class="business-text">
+<strong>{{ item.workspace.name }}</strong>
+<span>{{ item.workspace.legal_name }}</span>
+</span>
+<span class="tag">{{ item.get_role_display }}</span>
+<span class="open-label">Open workspace</span>
+</a>{% endfor %}</div>{% else %}<section class="empty">
+<h2>A place for your business</h2>
+<p>Your account is ready. Add a business to set its billing details and invite your team.</p>
+<a href="{% url 'workspace_create' %}">Set up your first workspace</a>
+</section>{% endif %}<div class="privacy-note">
+<h2>Separate businesses. Separate access.</h2>
+<p>Each workspace has its own settings and team. Joining a team requires an invitation from its administrator.</p>
+</div>{% endblock %}
