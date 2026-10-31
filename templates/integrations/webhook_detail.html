@@ -1,0 +1,37 @@
+{% extends 'base.html' %}{% block title %}Webhook endpoint{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'integration_webhooks' workspace.pk %}">Webhooks</a>
+<h1>Webhook endpoint</h1>
+<p class="url-text">{{ endpoint.url }}</p>
+</div>
+<div class="heading-actions">{% if endpoint.is_active %}<form method="post" action="{% url 'integration_webhook_action' workspace.pk endpoint.pk %}">{% csrf_token %}<input type="hidden" name="action" value="test"><button class="button" type="submit">Send test event</button>
+</form>{% endif %}<form method="post" action="{% url 'integration_webhook_action' workspace.pk endpoint.pk %}">{% csrf_token %}<input type="hidden" name="action" value="toggle"><button class="button quiet" type="submit" {% if endpoint.is_active %}data-confirm="Pause this endpoint? Events that happen while it is paused are not sent later."{% endif %}>{% if endpoint.is_active %}Pause{% else %}Resume{% endif %}</button>
+</form>
+</div>
+</div>
+<section class="activity">
+<div class="section-heading">
+<h2>Recent deliveries</h2>
+<span class="muted">Latest 50</span>
+</div>{% if deliveries %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Recent deliveries</caption>
+<thead>
+<tr>
+<th scope="col">Event</th>
+<th scope="col">Result</th>
+<th scope="col" class="num">Attempts</th>
+<th scope="col">Next try</th>
+<th scope="col"><span class="visually-hidden">Actions</span></th>
+</tr>
+</thead>
+<tbody>{% for delivery in deliveries %}<tr>
+<td><strong class="code">{{ delivery.event_type }}</strong><span>{{ delivery.created_at|date:'d M Y, H:i' }} IST</span></td>
+<td data-label="Result"><span class="tag status-{% if delivery.status == 'delivered' %}paid{% elif delivery.status == 'failed' %}overdue{% else %}issued{% endif %}">{{ delivery.get_status_display }}</span>{% if delivery.last_error %}<span>{{ delivery.last_error }}</span>{% endif %}</td>
+<td data-label="Attempts" class="num">{{ delivery.attempts }}</td>
+<td data-label="Next try">{% if delivery.status == 'pending' %}{{ delivery.next_attempt_at|date:'d M, H:i' }} IST{% else %}None{% endif %}</td>
+<td data-label="Actions">{% if delivery.status != 'pending' %}<form method="post" action="{% url 'integration_delivery_resend' workspace.pk delivery.pk %}">{% csrf_token %}<button class="text-button" type="submit">Send again</button>
+</form>{% endif %}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% else %}<p class="muted">No deliveries yet. Send a test event, or issue an invoice to see one here.</p>{% endif %}</section>{% endblock %}

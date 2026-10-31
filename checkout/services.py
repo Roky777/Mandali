@@ -13,7 +13,16 @@ from django.urls import reverse
 from django.utils import timezone
 
 from billing import services as billing
-from billing.models import Customer, Invoice, InvoiceLine, Payment, Plan, Product, Tax
+from billing.models import (
+    Customer,
+    Invoice,
+    InvoiceLine,
+    Payment,
+    Plan,
+    Product,
+    Tax,
+    Source,
+)
 from core.models import Activity, Workspace
 from .crypto import CheckoutError, cipher, decrypt, digest, encrypt
 from .gateways import (
@@ -241,6 +250,7 @@ def create_session(link, buyer, signed_nonce):
                         email=email,
                         phone=buyer.get("phone", ""),
                         billing_address=buyer["address"],
+                        source=Source.HOSTED,
                     )
             except IntegrityError:
                 customer = Customer.objects.get(

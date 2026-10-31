@@ -290,3 +290,16 @@ class ReleaseTests(SimpleTestCase):
             "https://candidate---mandali.run.app",
             environments[-1]["DJANGO_CSRF_TRUSTED_ORIGINS"],
         )
+
+
+class ImageContentsTests(SimpleTestCase):
+    def test_every_project_app_is_copied_into_the_image(self):
+        from django.conf import settings
+
+        root = Path(__file__).resolve().parent.parent
+        dockerfile = (root / "Dockerfile").read_text()
+        ignore = (root / ".dockerignore").read_text().split()
+        for app in settings.INSTALLED_APPS:
+            if (root / app).is_dir():
+                self.assertIn(f"COPY {app} ./{app}", dockerfile, app)
+                self.assertIn(f"!{app}/**", ignore, app)

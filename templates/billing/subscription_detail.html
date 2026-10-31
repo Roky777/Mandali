@@ -26,7 +26,11 @@
 <div>
 <dt>Payment terms</dt>
 <dd>{{ subscription.payment_terms_days }} days</dd>
-</div>{% if subscription.notes %}<div>
+</div>{% if subscription.external_id %}<div>
+<dt>Source</dt>
+<dd>{{ subscription.get_source_channel_display }}<small>Subscription ID <span class="code">{{ subscription.external_id }}</span></small>
+</dd>
+</div>{% endif %}{% if subscription.notes %}<div>
 <dt>Notes</dt>
 <dd>{{ subscription.notes|linebreaksbr }}</dd>
 </div>{% endif %}</dl>

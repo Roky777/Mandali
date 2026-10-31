@@ -8,7 +8,13 @@ from urllib.parse import urlsplit
 
 from cryptography.fernet import Fernet
 from django.core import signing
-from django.db import IntegrityError, transaction, connection, close_old_connections
+from django.db import (
+    IntegrityError,
+    transaction,
+    connection,
+    close_old_connections,
+    connections,
+)
 from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -150,6 +156,13 @@ class CheckoutTests(TestCase):
         with patch.object(gateway, "request", return_value={"items": [None]}):
             with self.assertRaises(GatewayError):
                 gateway.order_payments("order_example123")
+
+    def test_sandbox_events_do_not_trigger_real_website_fulfillment(self):
+        with patch("integrations.webhooks.queue") as queue:
+            session = self.session()
+            attempt = self.start(session)
+            services.apply_payment(attempt, self.evidence(attempt))
+        queue.assert_not_called()
 
     def test_order_post_timeout_and_rate_limit_are_uncertain_not_rejected(self):
         import urllib.error
@@ -831,6 +844,7 @@ class CheckoutTests(TestCase):
         )
         self.assertNotIn(KEY_SECRET, response.content.decode())
         self.assertNotIn(WEBHOOK_SECRET, response.content.decode())
+        self.assertContains(response, "Check payment status")
 
     def test_plan_checkout_is_only_an_initial_invoice(self):
         link = self.link(plan=self.plan, quantity=2)
@@ -874,7 +888,7 @@ class CheckoutConcurrencyTests(TransactionTestCase):
                 barrier.wait(timeout=10)
                 return action()
             finally:
-                close_old_connections()
+                connections.close_all()
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             jobs = [pool.submit(worker) for _ in range(2)]

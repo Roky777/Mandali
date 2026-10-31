@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 from core.models import Workspace
-from billing.models import Invoice, Payment, Product, Plan, ProductVariant
+from billing.models import Invoice, Payment, Product, Plan
 
 
 class GatewayAccount(models.Model):

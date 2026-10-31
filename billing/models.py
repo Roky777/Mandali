@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.conf import settings
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Lower
@@ -12,6 +12,24 @@ PERCENT = [MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))]
 NOT_NEGATIVE = [MinValueValidator(Decimal("0"))]
 QUANTITY = [MinValueValidator(1), MaxValueValidator(100000)]
 TERMS = [MinValueValidator(0), MaxValueValidator(365)]
+CODE = [
+    RegexValidator(
+        r"^[A-Za-z0-9._-]+$", "Use letters, numbers, dots, dashes, or underscores."
+    )
+]
+
+
+class Source(models.TextChoices):
+    MANUAL = "manual", "Manual"
+    API = "api", "Website / API"
+    PULL = "pull", "Website sync"
+    HOSTED = "hosted", "Hosted checkout"
+
+
+def unique_when_set(field, name):
+    return models.UniqueConstraint(
+        fields=["workspace", field], condition=~Q(**{field: ""}), name=name
+    )
 
 
 class Customer(models.Model):
@@ -21,6 +39,10 @@ class Customer(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     billing_address = models.TextField(max_length=500, blank=True)
     gstin = models.CharField("GSTIN", max_length=15, blank=True)
+    external_id = models.CharField(max_length=80, blank=True, editable=False)
+    source = models.CharField(
+        max_length=10, choices=Source.choices, default=Source.MANUAL, editable=False
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -31,7 +53,8 @@ class Customer(models.Model):
                 Lower("email"),
                 condition=~Q(email=""),
                 name="unique_customer_email_per_workspace",
-            )
+            ),
+            unique_when_set("external_id", "unique_customer_external_id"),
         ]
 
     def __str__(self):
@@ -58,6 +81,7 @@ class Product(models.Model):
 
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
     name = models.CharField(max_length=150)
+    code = models.CharField("Product code", max_length=40, blank=True, validators=CODE)
     kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.SERVICE)
     sales_price = models.DecimalField(**MONEY, validators=NOT_NEGATIVE)
     cost_price = models.DecimalField(**MONEY, default=ZERO, validators=NOT_NEGATIVE)
@@ -67,6 +91,7 @@ class Product(models.Model):
 
     class Meta:
         ordering = ["name", "id"]
+        constraints = [unique_when_set("code", "unique_product_code")]
 
     def __str__(self):
         return self.name
@@ -97,6 +122,7 @@ class Plan(models.Model):
 
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
     name = models.CharField(max_length=120)
+    code = models.CharField("Plan code", max_length=40, blank=True, validators=CODE)
     period = models.CharField(
         "Billing period", max_length=10, choices=Period.choices, default=Period.MONTHLY
     )
@@ -113,6 +139,7 @@ class Plan(models.Model):
 
     class Meta:
         ordering = ["name", "id"]
+        constraints = [unique_when_set("code", "unique_plan_code")]
 
     def __str__(self):
         return f"{self.name} ({self.get_period_display().lower()})"
@@ -252,6 +279,10 @@ class Subscription(models.Model):
     status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.DRAFT
     )
+    source_channel = models.CharField(
+        max_length=10, choices=Source.choices, default=Source.MANUAL, editable=False
+    )
+    external_id = models.CharField(max_length=80, blank=True, editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     plan = models.ForeignKey(Plan, on_delete=models.PROTECT, null=True, blank=True)
     template = models.ForeignKey(
@@ -278,7 +309,8 @@ class Subscription(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["workspace", "number"], name="unique_subscription_number"
-            )
+            ),
+            unique_when_set("external_id", "unique_subscription_external_id"),
         ]
 
 
@@ -300,7 +332,10 @@ class Invoice(models.Model):
     status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.DRAFT
     )
-    source_channel = models.CharField(max_length=10, default="manual", editable=False)
+    source_channel = models.CharField(
+        max_length=10, choices=Source.choices, default=Source.MANUAL, editable=False
+    )
+    external_id = models.CharField(max_length=80, blank=True, editable=False)
     is_sandbox = models.BooleanField(
         "Sandbox invoice (test payments only)", default=False
     )
@@ -354,6 +389,7 @@ class Invoice(models.Model):
                 condition=~Q(number=""),
                 name="unique_invoice_number",
             ),
+            unique_when_set("external_id", "unique_invoice_external_id"),
             models.CheckConstraint(
                 condition=Q(amount_paid__gte=0) & Q(amount_paid__lte=F("total")),
                 name="invoice_paid_within_total",

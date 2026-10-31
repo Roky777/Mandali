@@ -4,6 +4,7 @@ from django.db import transaction
 from django.db.models import Case, Count, F, Q, Sum, Value, When
 from django.utils import timezone
 from core.models import Activity
+from .signals import billing_event
 from .models import (
     ZERO,
     Discount,
@@ -33,6 +34,17 @@ def log(workspace, user, action, detail=""):
         is_system=user is None,
         action=action,
         detail=detail[:220],
+    )
+
+
+def emit(invoice, event, payment=None):
+    invoice.refresh_from_db()
+    billing_event.send(
+        sender=Invoice,
+        workspace=invoice.workspace,
+        event=event,
+        invoice=invoice,
+        payment=payment,
     )
 
 
@@ -352,7 +364,7 @@ def issue_invoice(invoice, user):
         business_address=business.address,
         business_gstin=business.gstin,
     )
-    invoice.refresh_from_db()
+    emit(invoice, "invoice.issued")
     log(business, user, "Invoice issued", f"{invoice.number}: ₹{invoice.total}")
 
 
@@ -373,6 +385,7 @@ def cancel_invoice(invoice, user, reason):
         Discount.objects.filter(pk=invoice.discount_id, times_used__gt=0).update(
             times_used=F("times_used") - 1
         )
+    emit(invoice, "invoice.cancelled")
     log(invoice.workspace, user, "Invoice cancelled", f"{invoice.number}: {reason}")
 
 
@@ -406,6 +419,9 @@ def record_payment(invoice, user, amount, method, received_on, reference="", not
     Invoice.objects.filter(
         pk=invoice.pk, status=Invoice.Status.ISSUED, amount_paid=F("total")
     ).update(status=Invoice.Status.PAID)
+    emit(invoice, "payment.recorded", payment)
+    if invoice.status == Invoice.Status.PAID:
+        emit(invoice, "invoice.paid", payment)
     log(invoice.workspace, user, "Payment recorded", f"{invoice.number}: ₹{amount}")
     return payment
 
@@ -443,6 +459,8 @@ def reverse_payment(payment, user, reason):
         ),
         updated_at=timezone.now(),
     )
+    payment.refresh_from_db()
+    emit(payment.invoice, "payment.reversed", payment)
     log(
         payment.workspace,
         user,

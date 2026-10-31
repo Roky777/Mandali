@@ -57,7 +57,7 @@ class WorkspaceForm(forms.ModelForm):
         help_texts = {
             "gstin": "Saved for future invoices. Format validation does not verify GST registration.",
             "website": "Saving a website does not connect its API.",
-            "use_api": "API integration is planned. Your preference is saved.",
+            "use_api": "Turns on API keys, webhooks, and website sync under Integrations.",
             "use_hosted": "Sandbox checkout links and QR codes are available under Payments.",
             "use_manual": "Customers, quotations, invoices, and offline payments are available.",
         }

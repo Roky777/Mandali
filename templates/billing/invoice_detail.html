@@ -23,7 +23,11 @@
 <dt>Discount</dt>
 <dd>{% if invoice.discount_label %}{{ invoice.discount_label }}{% elif invoice.discount %}{{ invoice.discount }}{% if discount_problem %}<small class="field-error">Not applied: {{ discount_problem }}</small>{% else %}<small>Checked again when you issue.</small>{% endif %}{% else %}None{% endif %}
 </dd>
-</div>{% if invoice.status == 'cancelled' %}<div>
+</div>{% if invoice.external_id %}<div>
+<dt>Source</dt>
+<dd>{{ invoice.get_source_channel_display }}<small>Order ID <span class="code">{{ invoice.external_id }}</span></small>
+</dd>
+</div>{% endif %}{% if invoice.status == 'cancelled' %}<div>
 <dt>Cancelled</dt>
 <dd>{{ invoice.cancelled_at|date:'d M Y, H:i' }} IST<small>{{ invoice.cancel_reason }}</small>
 </dd>

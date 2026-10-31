@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "core",
     "billing",
     "checkout",
+    "integrations",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -141,3 +142,7 @@ EMAIL_TIMEOUT = 10
 
 # First key encrypts new values; retain old keys to decrypt pending orders/links.
 PAYMENT_ENCRYPTION_KEYS = os.getenv("PAYMENT_ENCRYPTION_KEYS", "")
+# Development only: lets integrations reach a sample website on localhost.
+MANDALI_ALLOW_LOCAL_INTEGRATIONS = (
+    DEBUG and os.getenv("MANDALI_ALLOW_LOCAL_INTEGRATIONS", "0") == "1"
+)

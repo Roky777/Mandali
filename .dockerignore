@@ -8,6 +8,8 @@
 !billing/**
 !checkout/
 !checkout/**
+!integrations/
+!integrations/**
 !templates/
 !templates/**
 !static/
