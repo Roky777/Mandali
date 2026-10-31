@@ -1,6 +1,7 @@
 import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 from django.db.models.functions import Lower
 
 
@@ -109,3 +110,5 @@ class AuthRateBucket(models.Model):
     key = models.CharField(max_length=64, unique=True)
     window = models.BigIntegerField()
     attempts = models.PositiveIntegerField(default=0)
+    # Lets old buckets be pruned without knowing each scope's window length.
+    touched_at = models.DateTimeField(default=timezone.now)

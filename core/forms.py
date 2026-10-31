@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import User, Workspace
 from .validators import clean_gstin
+from operations import pilot
 
 
 class SignupForm(UserCreationForm):
@@ -14,6 +15,8 @@ class SignupForm(UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
+        if not pilot.allowed(email):
+            raise forms.ValidationError(pilot.MESSAGE)
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError(
                 "An account already uses this email. Sign in or reset your password."

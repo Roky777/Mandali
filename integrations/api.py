@@ -9,13 +9,15 @@ from billing import services
 from billing.forms import LineForm
 from billing.models import Customer, Invoice, Plan, Product, Source, Subscription
 from billing.services import BillingError, log
-from core.security import count_attempt, retry_after
+from core.security import client_ip, count_attempt, retry_after
 from .keys import authenticate
 from .models import IdempotencyRecord
 from .records import RecordError, external_id_of, field_errors, text, upsert_customer
 from .serializers import customer_data, invoice_detail, subscription_data
 
 RATE_LIMIT, RATE_WINDOW = 300, 300
+# Failed authentications per client address, so key guessing stays expensive.
+UNAUTHENTICATED_LIMIT = 30
 MAX_LINES = 100
 
 
@@ -72,6 +74,10 @@ def endpoint(route, methods, natural_key=None):
                 return response
             key = authenticate(request.headers.get("Authorization", ""))
             if key is None:
+                if count_attempt("api-unauthenticated", client_ip(request), RATE_WINDOW) > UNAUTHENTICATED_LIMIT:
+                    response = error(429, "rate_limited", "Too many unauthenticated requests from this address.")
+                    response["Retry-After"] = retry_after(RATE_WINDOW)
+                    return response
                 return error(401, "unauthorized", "Send a valid API key as: Authorization: Bearer mdl_...")
             workspace = key.workspace
             if not workspace.use_api:
