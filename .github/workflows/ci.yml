@@ -1,16 +1,36 @@
-name: Foundation checks
+name: Foundation and deployment checks
 on:
   push:
   pull_request:
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
     env:
       DJANGO_DEBUG: '1'
       DJANGO_SECRET_KEY: ci-only-placeholder-never-deploy-24a7f1e6b980cc58a315d4e2f7609b6d
+      DB_HOST: ${{ matrix.database == 'postgres' && '127.0.0.1' || '' }}
+      DB_NAME: mandali_ci
+      DB_USER: postgres
+      DB_PASSWORD: ci-database-only
     strategy:
       matrix:
         python: ['3.12', '3.14']
+        database: ['sqlite', 'postgres']
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: mandali_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-database-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -18,13 +38,40 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
       - run: pip install -r requirements.txt
+      - run: python manage.py collectstatic --noinput --settings=config.build_settings
       - run: python manage.py check
       - run: python manage.py makemigrations --check --dry-run
-      - run: python manage.py test
-      - run: python manage.py collectstatic --noinput
-      - name: Verify production security settings
+      - run: python manage.py test --noinput
+      - name: Verify production settings without contacting Cloud SQL
         env:
           DJANGO_DEBUG: '0'
           MANDALI_BASE_URL: https://mandali.example.com
-          DJANGO_ALLOWED_HOSTS: mandali.example.com
+          CLOUD_SQL_CONNECTION_NAME: example-project:asia-south1:mandali-db
+          DB_HOST: ''
         run: python manage.py check --deploy --fail-level ERROR
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mandali:ci .
+      - name: Start production container with dummy runtime configuration
+        run: |
+          docker run -d --name mandali-ci -p 18080:8080 \
+            -e DJANGO_SECRET_KEY=ci-only-placeholder-never-deploy-24a7f1e6b980cc58a315d4e2f7609b6d \
+            -e MANDALI_BASE_URL=https://mandali.example.com \
+            -e CLOUD_SQL_CONNECTION_NAME=example-project:asia-south1:mandali-db \
+            -e DB_NAME=mandali_ci -e DB_USER=postgres -e DB_PASSWORD=ci-database-only \
+            -e DJANGO_TRUST_CLOUD_RUN_PROXY=1 -e K_SERVICE=mandali-ci mandali:ci
+      - name: Check production HTTP, static assets, and failed readiness
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS -H 'Host: mandali.example.com' -H 'X-Forwarded-Proto: https' http://127.0.0.1:18080/health/live/; then break; fi
+            sleep 1
+          done
+          python3 scripts/check_container.py http://127.0.0.1:18080
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs mandali-ci
+      - name: Stop container
+        if: always()
+        run: docker rm -f mandali-ci

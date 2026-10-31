@@ -2,20 +2,32 @@ import hashlib
 import time
 from functools import wraps
 
+from django.conf import settings
 from django.db.models import F
+from ipaddress import ip_address
 from django.shortcuts import render
 
 from .models import AuthRateBucket
 
 
-# Shared across workers. A trusted proxy must set REMOTE_ADDR appropriately;
-# client-supplied X-Forwarded-For headers are deliberately ignored.
+def client_ip(request):
+    hops = settings.TRUSTED_PROXY_HOPS
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")
+    if hops and len(forwarded) >= hops:
+        try:
+            return str(ip_address(forwarded[-hops].strip()))
+        except ValueError:
+            pass
+    return request.META.get("REMOTE_ADDR", "unknown")
+
+
+# Shared across workers; proxy trust is off locally and explicit on Cloud Run.
 def rate_limit(scope, limit=10, seconds=900):
     def decorate(view):
         @wraps(view)
         def wrapped(request, *args, **kwargs):
             if request.method == "POST":
-                ip = request.META.get("REMOTE_ADDR", "unknown")
+                ip = client_ip(request)
                 key = hashlib.sha256(f"{scope}:{ip}".encode()).hexdigest()
                 window = int(time.time()) // seconds
                 bucket, _ = AuthRateBucket.objects.get_or_create(

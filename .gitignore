@@ -10,3 +10,4 @@ staticfiles/
 .hallmark/shots/
 .hallmark/browser/
 .hallmark/salt
+deploy/google-cloud/*.local.json

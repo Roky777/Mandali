@@ -122,6 +122,12 @@ Each part has a reviewable result and acceptance criteria in the [project plan](
 
 Hallmark guided the responsive blue-and-white interface. Cloudflare’s skill guided a focused source review of workspace permissions, invitations, and rate limiting. Reference revisions and review limits are recorded in [design direction](docs/DESIGN.md). A full pre-release security audit remains planned.
 
+## Deployment target
+
+Mandali targets **Google Cloud Run + Cloud SQL PostgreSQL**, with Artifact Registry images and Secret Manager secrets. The same Django service runs the interface and backend. See the [Google Cloud deployment guide](docs/GOOGLE_CLOUD.md) for setup, migrations, staged releases, and verification.
+
+The container includes production static-file serving. Production refuses to use SQLite or start without required database and secret configuration. SQLite remains available for local development. No cloud resources are provisioned by cloning this repository.
+
 ## Getting started
 
 Clone the repository:

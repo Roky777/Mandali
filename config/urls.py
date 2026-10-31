@@ -1,8 +1,10 @@
 from django.urls import include, path, reverse_lazy
 from django.contrib.auth import views as auth
-from core import views
+from core import views, health
 
 urlpatterns = [
+    path("health/live/", health.live, name="health_live"),
+    path("health/ready/", health.ready, name="health_ready"),
     path("", views.workspaces, name="workspaces"),
     path("signup/", views.signup, name="signup"),
     path("login/", views.EmailLoginView.as_view(), name="login"),
