@@ -1,7 +1,9 @@
 from django.urls import path
-from . import views
+from . import views, reporting
 
 urlpatterns = [
+    path("analytics/", reporting.analytics, name="analytics"),
+    path("analytics/spend/", reporting.spend, name="campaign_spend"),
     path("customers/", views.customers, name="customers"),
     path("customers/new/", views.customer_edit, name="customer_create"),
     path("customers/<int:pk>/", views.customer_detail, name="customer_detail"),
@@ -33,6 +35,7 @@ urlpatterns = [
     path("invoices/new/", views.invoice_edit, name="invoice_create"),
     path("invoices/<int:pk>/", views.invoice_detail, name="invoice_detail"),
     path("invoices/<int:pk>/edit/", views.invoice_edit, name="invoice_edit"),
+    path("invoices/<int:pk>/email/", views.invoice_email, name="invoice_email"),
     path("invoices/<int:pk>/print/", views.invoice_print, name="invoice_print"),
     path("invoices/<int:pk>/lines/", views.invoice_line, name="invoice_line_add"),
     path(

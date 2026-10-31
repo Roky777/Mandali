@@ -468,7 +468,7 @@ ACTIONS = {
 def lifecycle(status):
     S = Subscription.Status
     steps = [S.DRAFT, S.QUOTATION, S.CONFIRMED, S.ACTIVE, S.CLOSED]
-    current = steps.index(S.ACTIVE if status == S.PAUSED else status)
+    current = steps.index(S.ACTIVE if status == S.PAUSED else S.QUOTATION if status == S.EXPIRED else status)
     return [
         {
             "label": "Paused" if step == S.ACTIVE and status == S.PAUSED else step.label,
@@ -491,6 +491,7 @@ def subscription_detail(request, membership, pk):
         (name, label)
         for name, label in ACTIONS.items()
         if subscription.status in services.TRANSITIONS[name][0]
+        and not services.transition_problem(subscription, name, timezone.localdate())
     ]
     schedule = Schedule.objects.filter(subscription=subscription).first()
     if schedule and schedule.mode == "automatic":
@@ -877,3 +878,29 @@ def credit_note_print(request, membership, pk):
         {**context(membership), "note": note, "invoice": note.invoice, "back": url("invoice_detail", membership, note.invoice_id)},
     )
 
+
+
+@require_POST
+@workspace_access()
+def invoice_email(request, membership, pk):
+    from django.conf import settings
+    from django.core.mail import send_mail
+    from core.security import count_attempt
+    import logging
+    invoice = get_object_or_404(Invoice.objects.select_related("customer"), pk=pk, workspace=membership.workspace)
+    if invoice.status not in [Invoice.Status.ISSUED, Invoice.Status.PAID] or not invoice.customer_email:
+        messages.error(request, "Issue the invoice and set the customer email before sending.")
+    elif count_attempt("invoice-email", str(invoice.pk), 3600) > 5:
+        messages.error(request, "This invoice has been emailed recently. Please try again later.")
+    else:
+        portal_url = settings.MANDALI_BASE_URL + reverse("portal_request")
+        body = f"Invoice {invoice.number} from {invoice.business_name}\nTotal: INR {invoice.total}\nOutstanding: INR {invoice.balance}\nDue: {invoice.due_date}\n\nView and print your invoice: {portal_url}\nRequest a secure link using this email address."
+        try:
+            send_mail(f"Invoice {invoice.number} from {invoice.business_name}", body, settings.DEFAULT_FROM_EMAIL, [invoice.customer_email], fail_silently=False)
+        except Exception:
+            logging.getLogger(__name__).error("Invoice email delivery failed.")
+            messages.error(request, "Email could not be sent. Please try again later.")
+        else:
+            log(membership.workspace, request.user, "Invoice emailed", invoice.number)
+            messages.success(request, "Invoice email accepted for delivery.")
+    return redirect("invoice_detail", workspace_id=membership.workspace.pk, pk=invoice.pk)

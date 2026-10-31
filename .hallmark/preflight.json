@@ -16,5 +16,18 @@
     "top bar and workspace tabs",
     "business essentials ledger",
     "accessible server-side forms"
-  ]
+  ],
+  "workspace_redesign": {
+    "date": "2026-10-31",
+    "reference": "nutlope/hallmark v2.0.0",
+    "scope": "full workspace redesign on latest main",
+    "preserve": [
+      "blue and white brand",
+      "server-side Django forms",
+      "all navigation destinations",
+      "portal and credit/refund accounting"
+    ],
+    "direction": "system fonts, grouped task navigation, actual collections and overdue queue",
+    "evidence": "docs/DESIGN.md and docs/REQUIREMENTS_AUDIT.md"
+  }
 }

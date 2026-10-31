@@ -7,42 +7,31 @@
 <title>{% block title %}Mandali{% endblock %} | Business workspace</title>
 <link rel="icon" type="image/svg+xml" href="{% static 'core/favicon.svg' %}">
 <link rel="stylesheet" href="{% static 'core/app.css' %}">
+<link rel="stylesheet" href="{% static 'core/workspace.css' %}">
 <script src="{% static 'core/app.js' %}" defer>
 </script>
 </head>
-<body>
+<body class="{% if workspace %}workspace-shell{% else %}public-shell{% endif %}">
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
 <div class="container topbar-inner">
 <a class="wordmark" href="{% url 'workspaces' %}" aria-label="Mandali home">
 <span class="mark" aria-hidden="true">m</span>mandali<span class="wordmark-caption">Business workspace</span>
 </a>
-<div class="account-nav">{% if user.is_authenticated %}<span class="account-name">{{ user.first_name|default:user.email }}</span>
+<div class="account-nav">{% if user.is_authenticated %}<a href="{% url 'portal_request' %}">Customer portal</a><span class="account-name">{{ user.first_name|default:user.email }}</span>
 <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit" class="text-button">Sign out</button>
 </form>{% else %}{% if request.resolver_match.url_name == 'login' %}<a href="{% url 'signup' %}" class="button quiet">Create account</a>{% else %}<a href="{% url 'login' %}">Sign in</a>{% endif %}{% endif %}</div>
 </div>
 </header>
-{% if workspace %}<nav class="workspace-nav" aria-label="Workspace">
-<div class="container workspace-nav-inner">
-<a href="{% url 'workspaces' %}" class="workspace-switch">All workspaces</a>
-<span class="workspace-name">{{ workspace.name }}</span>
-<div class="tabs">{% with tab=request.resolver_match.url_name %}
-<a {% if tab == 'dashboard' %}aria-current="page"{% endif %} href="{% url 'dashboard' workspace.pk %}">Overview</a>
-<a {% if 'customer' in tab %}aria-current="page"{% endif %} href="{% url 'customers' workspace.pk %}">Customers</a>
-<a {% if 'subscription' in tab %}aria-current="page"{% endif %} href="{% url 'subscriptions' workspace.pk %}">Subscriptions</a>
-<a {% if 'invoice' in tab %}aria-current="page"{% endif %} href="{% url 'invoices' workspace.pk %}">Invoices</a>
-<a {% if 'report' in tab %}aria-current="page"{% endif %} href="{% url 'reports' workspace.pk %}">Reports</a>
-<a {% if 'checkout' in tab %}aria-current="page"{% endif %} href="{% url 'checkout_links' workspace.pk %}">Payments</a>
-<a {% if 'recurring' in tab %}aria-current="page"{% endif %} href="{% url 'recurring_overview' workspace.pk %}">Automation</a>
-<a {% if 'catalog' in tab or 'product' in tab or 'template' in tab %}aria-current="page"{% endif %} href="{% url 'catalog_home' workspace.pk %}">Catalog</a>{% if is_admin %}
-<a {% if 'integration' in tab %}aria-current="page"{% endif %} href="{% url 'integration_keys' workspace.pk %}">Integrations</a>{% endif %}
-<a {% if request.resolver_match.url_name == 'team' %}aria-current="page"{% endif %} href="{% url 'team' workspace.pk %}">Team</a>{% if is_admin %}<a {% if request.resolver_match.url_name == 'workspace_settings' %}aria-current="page"{% endif %} href="{% url 'workspace_settings' workspace.pk %}">Settings</a>{% endif %}{% endwith %}</div>
-</div>
-</nav>{% endif %}
+{% if workspace %}<aside class="workspace-sidebar">
+<div class="workspace-identity"><span class="business-initial" aria-hidden="true">{{ workspace.name|slice:':1' }}</span><div><strong>{{ workspace.name }}</strong><a href="{% url 'workspaces' %}">Switch business</a></div></div>
+<details class="workspace-menu" open><summary>Menu <span>Workspace navigation</span></summary><nav class="workspace-nav" aria-label="Workspace">{% include 'core/navigation.html' %}</nav></details>
+<div class="sidebar-foot"><span>{{ membership.get_role_display }}</span><span>INR / India time</span></div>
+</aside>{% endif %}
 <main class="container main" id="main">{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
 <footer class="container footer">
 <span>Mandali</span>
-<span>Built around your business.</span>
+<span>Subscriptions, invoices and collections.</span>
 </footer>
 </body>
 </html>

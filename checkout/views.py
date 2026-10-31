@@ -309,6 +309,13 @@ def public_link(request, token):
             CheckoutError("This invoice is no longer available for payment."),
             410,
         )
+    from billing.models import CheckoutVisit
+    tracking_key = "checkout_attribution_" + str(link.pk)
+    if request.method == "GET":
+        tags = {key: request.GET.get("utm_" + key, "").strip().lower()[:100] for key in ["source", "medium", "campaign", "content"]}
+        if any(tags.values()) or tracking_key not in request.session:
+            request.session[tracking_key] = tags
+        CheckoutVisit.objects.create(workspace=link.workspace, link=link, **request.session.get(tracking_key, tags))
     form = BuyerForm(
         request.POST or None, initial={"nonce": services.nonce(link, current)}
     )
@@ -327,7 +334,7 @@ def public_link(request, token):
         if form.is_valid():
             try:
                 session = services.create_session(
-                    link, form.cleaned_data, form.cleaned_data["nonce"]
+                    link, form.cleaned_data, form.cleaned_data["nonce"], attribution=request.session.get(tracking_key, {})
                 )
             except CheckoutError as error:
                 form.add_error(None, str(error))

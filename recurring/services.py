@@ -1,5 +1,6 @@
 from datetime import timedelta
 from django.db import transaction
+from django.db.models import F, Q
 from django.utils import timezone
 from billing import services as billing
 from billing.models import Subscription, Invoice, InvoiceLine, Discount
@@ -67,6 +68,7 @@ def clone_invoice(schedule):
         created_by=schedule.created_by,
         is_sandbox=schedule.is_sandbox,
         source_channel=sub.source_channel,
+        utm_source=sub.utm_source, utm_medium=sub.utm_medium, utm_campaign=sub.utm_campaign, utm_content=sub.utm_content,
     )
     InvoiceLine.objects.bulk_create(
         InvoiceLine(
@@ -120,11 +122,16 @@ def bill_one(schedule_id, today=None):
         Schedule.objects.filter(pk=schedule.pk).update(next_bill_on=boundary)
         return prior
     invoice = clone_invoice(schedule)
+    lines = list(invoice.lines.all())
+    candidates = Discount.objects.select_for_update().filter(workspace_id=sub.workspace_id, is_active=True).prefetch_related("products").order_by("pk")
     if schedule.discount_id:
-        discount = Discount.objects.select_for_update().get(pk=schedule.discount_id)
-        if not billing.discount_problem(discount, list(invoice.lines.all()), today):
-            invoice.discount = discount
-            invoice.save(update_fields=["discount"])
+        candidates = candidates.filter(pk=schedule.discount_id)
+    eligible = [discount for discount in candidates if not billing.discount_problem(discount, lines, today)]
+    if eligible:
+        # One discount per invoice. Lowest final total wins; ties use stable ID order.
+        discount = min(eligible, key=lambda rule: billing.calculate(lines, rule)["total"])
+        invoice.discount = discount
+        invoice.save(update_fields=["discount"])
     billing.issue_invoice(invoice, None)
     cycle = Cycle.objects.create(
         schedule=schedule, starts_on=start, ends_before=end, invoice=invoice
@@ -148,13 +155,17 @@ def on_transition(sub, action):
     if action == "close":
         schedule.enabled = False
     elif action == "resume":
-        # Paused cycles are skipped, never retroactively charged on resume.
+        # Preserve the unused portion of the billing period while paused.
         today = timezone.localdate()
+        if sub.paused_on:
+            shift = timedelta(days=max(0, (today - sub.paused_on).days))
+            schedule.next_bill_on += shift
+            schedule.anchor_on += shift
+            if sub.expiry_date:
+                Subscription.objects.filter(pk=sub.pk).update(expiry_date=sub.expiry_date + shift)
         while schedule.next_bill_on < today:
-            schedule.next_bill_on = advance(
-                schedule.next_bill_on, schedule.period, schedule.anchor_on
-            )
-    schedule.save(update_fields=["enabled", "next_bill_on"])
+            schedule.next_bill_on = advance(schedule.next_bill_on, schedule.period, schedule.anchor_on)
+    schedule.save(update_fields=["enabled", "next_bill_on", "anchor_on"])
 
 
 @transaction.atomic
@@ -214,3 +225,16 @@ def queue_due_notices(today=None):
             queue_notice(invoice, "due")
         elif invoice.due_date + timedelta(days=3) <= today:
             queue_notice(invoice, "overdue")
+
+def maintain_terms(workspace=None, today=None):
+    today = today or timezone.localdate()
+    subs = Subscription.objects.all()
+    if workspace is not None:
+        subs = subs.filter(workspace=workspace)
+    expired = subs.filter(status="quotation", valid_until__lt=today).update(status="expired", updated_at=timezone.now())
+    # Provider-owned terms are controlled by gateway reconciliation.
+    due = subs.filter(status__in=["active", "paused"], expiry_date__lt=today, plan__auto_close=True).exclude(schedule__mode="automatic").filter(Q(schedule__isnull=True) | Q(schedule__next_bill_on__gt=F("expiry_date")))
+    ids = list(due.values_list("pk", flat=True))
+    closed = due.update(status="closed", updated_at=timezone.now())
+    Schedule.objects.filter(subscription_id__in=ids).update(enabled=False)
+    return {"expired_quotations": expired, "closed_terms": closed}
