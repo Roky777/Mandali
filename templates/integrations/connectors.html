@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% block title %}Website sync{% endblock %}{% block content %}{% include 'integrations/header.html' %}
+<div class="section-heading">
+<p class="section-note">Fetch your customer list from your own API. You map the fields, review a preview, and nothing changes until you apply it. {{ linked }} customer{{ linked|pluralize }} {{ linked|pluralize:'is,are' }} linked to your website by ID.</p>{% if api_enabled %}<a class="button" href="{% url 'integration_connector_create' workspace.pk %}">Connect your website</a>{% endif %}</div>
+{% if connectors %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Website connections</caption>
+<thead>
+<tr>
+<th scope="col">Connection</th>
+<th scope="col">Address</th>
+</tr>
+</thead>
+<tbody>{% for connector in connectors %}<tr>
+<td><a href="{% url 'integration_connector' workspace.pk connector.pk %}"><strong>{{ connector.name }}</strong></a></td>
+<td data-label="Address"><span class="url-text">{{ connector.url }}</span></td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% else %}<section class="empty">
+<h2>No website connected</h2>
+<p>Connect an https:// address on your website that lists customers as JSON. Mandali reads it only when you ask.</p>{% if api_enabled %}<a href="{% url 'integration_connector_create' workspace.pk %}">Connect your website</a>{% endif %}</section>{% endif %}{% endblock %}

@@ -1,0 +1,8 @@
+<div class="page-heading">
+<div>
+<h1>Integrations</h1>
+<p>Connect {{ workspace.name }}’s website or app to the same customers and invoices your team uses.</p>
+</div>
+</div>
+<nav class="subtabs" aria-label="Integration sections">{% for name, title in sections %}<a href="{% url name workspace.pk %}" {% if name == section %}aria-current="page"{% endif %}>{{ title }}</a>{% endfor %}</nav>
+{% if not api_enabled %}<div class="notice" role="status">Website / API integration is switched off for this business. Existing keys are refused and nothing new can be added. <a class="nowrap" href="{% url 'workspace_settings' workspace.pk %}">Turn it on in Settings</a>.</div>{% endif %}

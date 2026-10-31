@@ -4,6 +4,26 @@
     "theme": "dose",
     "shape": "app screen",
     "axes": "light/system-sans/blue",
+    "nav": "top bar, workspace tabs, integration subtabs",
+    "footer": "quiet colophon",
+    "imagery": "none; actual app screens",
+    "signature": "website sync preview",
+    "sections": [
+      "API keys",
+      "webhooks",
+      "webhook deliveries",
+      "website sync",
+      "sync preview"
+    ],
+    "waived": [],
+    "prompt": "Mandali Part 4, website and API integration in the Part 1 blue and white system",
+    "review": "sloplint --scope app --render clean on 26 screens; manual capture review"
+  },
+  {
+    "scope": "app",
+    "theme": "dose",
+    "shape": "app screen",
+    "axes": "light/system-sans/blue",
     "nav": "top bar, workspace tabs, catalog and status subtabs",
     "footer": "quiet colophon",
     "imagery": "none; actual app screens",

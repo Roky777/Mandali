@@ -10,6 +10,11 @@
 </dd>
 </div>
 <div>
+<dt>Product code</dt>
+<dd>{% if product.code %}<span class="code">{{ product.code }}</span><small>Your website uses this code on orders.</small>{% else %}None<small>Add a code to sell this product through the API.</small>{% endif %}
+</dd>
+</div>
+<div>
 <dt>Type and tax</dt>
 <dd>{{ product.get_kind_display }}<small>{{ product.tax|default:'No tax' }}</small>
 </dd>

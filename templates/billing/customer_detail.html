@@ -22,7 +22,11 @@
 <div>
 <dt>GSTIN</dt>
 <dd>{{ customer.gstin|default:'Not provided' }}</dd>
-</div>
+</div>{% if customer.external_id %}<div>
+<dt>Linked record</dt>
+<dd>{{ customer.get_source_display }}<small>Customer ID <span class="code">{{ customer.external_id }}</span>. Your website owns these contact details; its next update replaces edits made here.</small>
+</dd>
+</div>{% endif %}
 </dl>
 <section class="activity">
 <div class="section-heading">

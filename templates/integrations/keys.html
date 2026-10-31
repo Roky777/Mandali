@@ -1,0 +1,46 @@
+{% extends 'base.html' %}{% block title %}API keys{% endblock %}{% block content %}{% include 'integrations/header.html' %}
+<section class="invite-strip">
+<div>
+<h2>Create an API key</h2>
+<p>Your website uses a key to send customers, orders, and subscriptions. Each key belongs to this business only and can be revoked at any time.</p>
+</div>
+<form method="post">{% csrf_token %}<label for="id_name">{{ form.name.label }}</label>
+<div class="inline-form">
+<input type="text" name="name" id="id_name" maxlength="80" required placeholder="Shop website" {% if form.name.errors %}aria-invalid="true"{% endif %} {% if not api_enabled %}disabled{% endif %}>
+<button class="button" type="submit" {% if not api_enabled %}disabled{% endif %}>Create key</button>
+</div>{% if form.name.errors %}<div class="field-help field-error" role="alert">{{ form.name.errors }}</div>{% endif %}</form>
+</section>
+{% if keys %}<div class="data-table">
+<table>
+<caption class="visually-hidden">API keys</caption>
+<thead>
+<tr>
+<th scope="col">Key</th>
+<th scope="col">Created</th>
+<th scope="col">Last used</th>
+<th scope="col">Access</th>
+</tr>
+</thead>
+<tbody>{% for key in keys %}<tr>
+<td><strong>{{ key.name }}</strong><span class="code">{{ key.prefix }}…</span></td>
+<td data-label="Created">{{ key.created_at|date:'d M Y' }}<span>{{ key.created_by.first_name|default:key.created_by.email }}</span></td>
+<td data-label="Last used">{{ key.last_used_at|date:'d M Y, H:i'|default:'Never' }}</td>
+<td data-label="Access">{% if key.revoked_at %}<span class="muted">Revoked {{ key.revoked_at|date:'d M Y' }}</span>{% else %}<form method="post" action="{% url 'integration_key_revoke' workspace.pk key.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Revoke this key? Requests using it will be refused immediately.">Revoke</button>
+</form>{% endif %}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% else %}<section class="empty">
+<h2>No API keys yet</h2>
+<p>Create a key, then add it to your website’s server settings. Never put it in browser code.</p>
+</section>{% endif %}
+<section class="activity">
+<h2>Send your first order</h2>
+<p class="section-note">Products and plans are matched by the code set in the catalog. Totals and taxes are calculated by Mandali. Resending the same order is safe: its <span class="code">external_id</span> makes it idempotent.</p>
+<pre class="code-block"><code>curl {{ base_url }}/api/v1/orders \
+  -H "Authorization: Bearer mdl_..." \
+  -H "Content-Type: application/json" \
+  -d '{"external_id": "order-1001",
+       "customer": {"external_id": "cust-42", "name": "Asha Traders", "email": "asha@example.com"},
+       "lines": [{"product": "retainer", "quantity": 1}]}'</code></pre>
+<p class="field-help">The full reference, including customers, subscriptions, errors, and webhooks, is in docs/INTEGRATIONS.md in the project repository.</p>
+</section>{% endblock %}

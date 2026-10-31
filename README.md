@@ -8,7 +8,7 @@ Businesses with websites connect through authorized APIs. Businesses without web
 
 The project is based on the **Subscription Management System** hackathon problem statement and its Brightloop Software scenario, where spreadsheets, manual invoices, and missed renewals make running a subscription business difficult.
 
-> **Project status:** Parts 1 and 2 are implemented. Part 1 covers email-based accounts, password recovery, business onboarding, isolated workspaces, administrator/staff access, staff invitations, and business settings. Part 2 adds manual billing: customers, products and variants, plans, taxes, discounts, quotation templates, quotations and subscriptions, INR invoices, and offline payment recording with partial payments. Online checkout, API integration, recurring automation, and gateway routing remain planned. See [foundation setup](docs/FOUNDATION.md) and [manual billing](docs/BILLING.md).
+> **Project status:** Parts 1, 2, and 4 are implemented. Part 1 covers email-based accounts, password recovery, business onboarding, isolated workspaces, administrator/staff access, staff invitations, and business settings. Part 2 adds manual billing: customers, products and variants, plans, taxes, discounts, quotation templates, quotations and subscriptions, INR invoices, and offline payment recording with partial payments. Part 4 adds website and API integration: business API keys, idempotent customer, order, and subscription endpoints, signed invoice and payment webhooks with retries, and a previewed customer sync from the business's own API. Online checkout, recurring automation, and gateway routing remain planned. See [foundation setup](docs/FOUNDATION.md), [manual billing](docs/BILLING.md), and [website and API integration](docs/INTEGRATIONS.md).
 
 See the [phased project plan](docs/PROJECT_PLAN.md) for the revised scope, acceptance criteria, and build order. We will implement and review one part at a time.
 
@@ -103,12 +103,12 @@ Eligible discounts should appear automatically on the next invoice and stop appl
 
 ## Development roadmap
 
-Each part has a reviewable result and acceptance criteria in the [project plan](docs/PROJECT_PLAN.md). Parts 1 and 2 are implemented; Parts 3 through 8 remain pending.
+Each part has a reviewable result and acceptance criteria in the [project plan](docs/PROJECT_PLAN.md). Parts 1, 2, and 4 are implemented; Parts 3 and 5 through 8 remain pending.
 
 - [x] **Part 1:** Foundation, business onboarding, access control, and design direction.
 - [x] **Part 2:** Manual billing, customers, products, quotations, plans, taxes, and discounts.
 - [ ] **Part 3:** Hosted checkout, shareable links, QR codes, and one sandbox gateway.
-- [ ] **Part 4:** Website/API integration and synchronization.
+- [x] **Part 4:** Website/API integration and synchronization.
 - [ ] **Part 5:** Recurring invoices, authorized collection, reminders, and recovery.
 - [ ] **Part 6:** Gateway recommendations, second integration, and automatic selection.
 - [ ] **Part 7:** Customer portal, reporting, refunds, and operational controls.

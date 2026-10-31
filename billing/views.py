@@ -175,8 +175,8 @@ CATALOG = {
         "singular": "product",
         "description": "What you sell. Variants adjust a product's price.",
         "empty": "Add the services or goods you bill for. Products appear as lines on quotations and invoices.",
-        "columns": ["Product", "Type", "Sales price", "Tax", "Status"],
-        "cells": lambda o: [o.get_kind_display(), inr(o.sales_price), o.tax or "No tax"],
+        "columns": ["Product", "Code", "Type", "Sales price", "Tax", "Status"],
+        "cells": lambda o: [o.code or "None", o.get_kind_display(), inr(o.sales_price), o.tax or "No tax"],
         "related": ["tax"],
     },
     "plans": {
@@ -186,8 +186,8 @@ CATALOG = {
         "singular": "plan",
         "description": "Billing periods, prices, and the policies subscriptions follow.",
         "empty": "Add a daily, weekly, monthly, or yearly plan to start offering subscriptions.",
-        "columns": ["Plan", "Period", "Price", "Minimum quantity", "Status"],
-        "cells": lambda o: [o.get_period_display(), inr(o.price), o.min_quantity],
+        "columns": ["Plan", "Code", "Period", "Price", "Minimum quantity", "Status"],
+        "cells": lambda o: [o.code or "None", o.get_period_display(), inr(o.price), o.min_quantity],
         "related": [],
     },
     "taxes": {

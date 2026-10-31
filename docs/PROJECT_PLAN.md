@@ -10,7 +10,7 @@ There are two business audiences: those with a website or application, and those
 
 Terminology: a **business** is a merchant using Mandali; a **customer** buys from that business. Every business owns an isolated workspace. Business administrators, staff, and end customers have different permissions. Platform administration must be separate from merchant administration.
 
-This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Parts 3 through 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
+This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 4 is implemented ahead of Part 3; see [website and API integration](INTEGRATIONS.md). Parts 3 and 5 through 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
 
 ## Three ways to use the same billing system
 
@@ -57,6 +57,8 @@ A reusable plan checkout link creates a new checkout session for each customer. 
 **Build:** Business-scoped API keys, documented customer/order/subscription ingestion endpoints, idempotency keys, one authorized pull connector, external-ID mapping, sync previews and logs, retry handling, and outgoing signed event notifications. Define which system owns each field and how updates and deletions are handled. Secrets stay on the server.
 
 **Reviewable result:** A sample business website supplies a customer and order, Mandali creates the appropriate invoice or checkout session, and the website receives the verified payment result. Replaying or resynchronizing the same source record does not duplicate the invoice.
+
+**Status:** Implemented before Part 3, so payment events currently come from offline payments that staff record. The pull connector covers customers. Pulling orders, scheduled syncs, and platform-specific connectors remain later increments.
 
 **Boundary:** No generic scraping. Additional website platforms and connectors are separate increments. Manual and API changes share an audit trail and explicit conflict rules.
 
@@ -129,4 +131,4 @@ Confirmed: India first, INR, businesses with or without websites, API plus hoste
 
 Stack selected for Part 1: Django 5.2 LTS with SQLite locally. Hosting is selected: Google Cloud Run, Cloud SQL PostgreSQL, Artifact Registry, and Secret Manager; see [deployment guide](GOOGLE_CLOUD.md). Still to select during later design: first supported website/API shape; initial gateway and merchant account model; supported business/tax scenarios; partial-payment policies; subscription upgrade/downgrade and proration rules; delivery provider; and business branding controls. Validate current provider capabilities, account access, and tax obligations at implementation time rather than hard-coding assumptions now.
 
-Parts 1 and 2 are implemented for review. Next implementation task after that review: Part 3 only. Continue to take each later part as a separate increment.
+Parts 1, 2, and 4 are implemented for review. Next implementation task after that review: Part 3 only. Continue to take each later part as a separate increment.

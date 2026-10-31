@@ -6,6 +6,8 @@
 !core/**
 !billing/
 !billing/**
+!integrations/
+!integrations/**
 !templates/
 !templates/**
 !static/

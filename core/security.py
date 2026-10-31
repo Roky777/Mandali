@@ -21,28 +21,34 @@ def client_ip(request):
     return request.META.get("REMOTE_ADDR", "unknown")
 
 
+def count_attempt(scope, identity, seconds):
+    """Count one attempt in the current fixed window and return the total."""
+    key = hashlib.sha256(f"{scope}:{identity}".encode()).hexdigest()
+    window = int(time.time()) // seconds
+    bucket, _ = AuthRateBucket.objects.get_or_create(
+        key=key, defaults={"window": window}
+    )
+    # Each update is an atomic autocommit statement, including on
+    # SQLite. No row-lock-dependent read/modify/write transaction.
+    AuthRateBucket.objects.filter(pk=bucket.pk, window__lt=window).update(
+        window=window, attempts=0
+    )
+    AuthRateBucket.objects.filter(pk=bucket.pk).update(attempts=F("attempts") + 1)
+    bucket.refresh_from_db(fields=["attempts"])
+    return bucket.attempts
+
+
+def retry_after(seconds):
+    return str(seconds - int(time.time()) % seconds)
+
+
 # Shared across workers; proxy trust is off locally and explicit on Cloud Run.
 def rate_limit(scope, limit=10, seconds=900):
     def decorate(view):
         @wraps(view)
         def wrapped(request, *args, **kwargs):
             if request.method == "POST":
-                ip = client_ip(request)
-                key = hashlib.sha256(f"{scope}:{ip}".encode()).hexdigest()
-                window = int(time.time()) // seconds
-                bucket, _ = AuthRateBucket.objects.get_or_create(
-                    key=key, defaults={"window": window}
-                )
-                # Each update is an atomic autocommit statement, including on
-                # SQLite. No row-lock-dependent read/modify/write transaction.
-                AuthRateBucket.objects.filter(pk=bucket.pk, window__lt=window).update(
-                    window=window, attempts=0
-                )
-                AuthRateBucket.objects.filter(pk=bucket.pk).update(
-                    attempts=F("attempts") + 1
-                )
-                bucket.refresh_from_db(fields=["attempts"])
-                if bucket.attempts > limit:
+                if count_attempt(scope, client_ip(request), seconds) > limit:
                     response = render(
                         request,
                         "core/error.html",
@@ -52,7 +58,7 @@ def rate_limit(scope, limit=10, seconds=900):
                         },
                         status=429,
                     )
-                    response["Retry-After"] = str(seconds - int(time.time()) % seconds)
+                    response["Retry-After"] = retry_after(seconds)
                     return response
             return view(request, *args, **kwargs)
 
