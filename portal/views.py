@@ -17,7 +17,7 @@ from .forms import LinkRequestForm
 
 PORTAL_ACTOR = "Customer (portal)"
 # Customers act only on subscriptions they hold, within the plan's policies.
-CUSTOMER_ACTIONS = {"pause": "Pause", "resume": "Resume", "close": "Close"}
+CUSTOMER_ACTIONS = {"pause": "Pause", "resume": "Resume", "close": "Close", "renew": "Renew"}
 VISIBLE_SUBSCRIPTIONS = [
     Subscription.Status.QUOTATION,
     Subscription.Status.CONFIRMED,
@@ -148,7 +148,16 @@ def subscription_action(request, pk, action):
         customer_id__in=services.signed_in(request),
     )
     try:
-        billing.transition(subscription, action, None, actor_label=PORTAL_ACTOR)
+        if action == "renew":
+            from recurring.calendar import advance
+            from recurring.services import renew
+            if not subscription.plan_id:
+                raise BillingError("A renewable plan is required.")
+            anchor = max(subscription.expiry_date or timezone.localdate(), timezone.localdate())
+            renew(subscription, None, advance(anchor, subscription.plan.period, anchor))
+            billing.log(subscription.workspace, None, "Customer renewed subscription", subscription.number, actor_label=PORTAL_ACTOR)
+        else:
+            billing.transition(subscription, action, None, actor_label=PORTAL_ACTOR)
         messages.success(request, f"Subscription {subscription.number} updated.")
     except BillingError as error:
         messages.error(request, str(error))

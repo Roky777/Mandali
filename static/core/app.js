@@ -24,3 +24,31 @@ document.querySelector('[aria-invalid="true"]')?.focus();
 document.querySelectorAll('[data-print]').forEach((button) => {
   button.addEventListener('click', () => window.print());
 });
+
+// Keep every destination available without scripting; collapse the menu on phones.
+const workspaceMenu = document.querySelector('.workspace-menu');
+if (workspaceMenu) {
+  const smallScreen = window.matchMedia('(max-width: 960px)');
+  const adaptMenu = () => { workspaceMenu.open = !smallScreen.matches; };
+  adaptMenu();
+  smallScreen.addEventListener('change', adaptMenu);
+}
+
+// Make password requirements visible before a failed submission.
+const newPassword = document.querySelector('input[name="password1"], input[name="new_password1"]');
+if (newPassword) {
+  const checks = [
+    ['At least 9 characters', value => value.length > 8],
+    ['One uppercase letter', value => /[A-Z]/.test(value)],
+    ['One lowercase letter', value => /[a-z]/.test(value)],
+    ['One special character', value => /[^\w\s]/.test(value)],
+  ];
+  const list = document.createElement('ul');
+  list.className = 'password-checklist';
+  list.setAttribute('aria-label', 'Password requirements');
+  checks.forEach(([label]) => { const li = document.createElement('li'); li.textContent = label; list.append(li); });
+  newPassword.after(list);
+  const update = () => checks.forEach(([, test], i) => list.children[i].classList.toggle('passed', test(newPassword.value)));
+  newPassword.addEventListener('input', update);
+  update();
+}

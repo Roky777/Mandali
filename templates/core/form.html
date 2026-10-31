@@ -1,7 +1,7 @@
 {% extends 'base.html' %}{% block title %}{{ title }}{% endblock %}{% block content %}
 <div class="form-layout">
 <section class="form-intro">
-<h1>{{ title }}</h1>
+{% if cancel_url %}<a class="back-link" href="{{ cancel_url }}">Back</a>{% endif %}<h1>{{ title }}</h1>
 <p>{{ description }}</p>{% if auth_form %}<div class="intro-note">
 <h2>One account. Your own workspace.</h2>
 <p>Keep your business details and team access together, ready for billing.</p>

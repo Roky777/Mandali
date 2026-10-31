@@ -25,3 +25,12 @@ def inr(value):
 @register.filter
 def rupees_from_paise(value):
     return inr(Decimal(value) / 100)
+
+
+@register.filter
+def compact_inr(value):
+    amount = Decimal(value or 0)
+    for threshold, label in [(Decimal("10000000"), "Cr"), (Decimal("100000"), "L"), (Decimal("1000"), "K")]:
+        if abs(amount) >= threshold:
+            return f"₹{amount/threshold:.1f}{label}"
+    return f"₹{amount:.0f}"

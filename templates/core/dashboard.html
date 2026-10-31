@@ -1,68 +1,9 @@
 {% extends 'base.html' %}{% load billing %}{% block title %}{{ workspace.name }} overview{% endblock %}{% block content %}
-<div class="page-heading">
-<div>
-<h1>{{ workspace.name }}</h1>
-<p>Your business details, billing position, and recent activity.</p>
-</div>
-<span class="tag">{{ membership.get_role_display }}</span>
-</div>
-<div class="overview-grid">
-<section>
-<h2>Workspace essentials</h2>
-<dl class="essentials">
-<div>
-<dt>Business identity</dt>
-<dd>{{ workspace.legal_name }}<small>{{ workspace.billing_email }}</small>
-</dd>
-</div>
-<div>
-<dt>Currency &amp; time</dt>
-<dd>Indian rupee (INR)<small>Asia/Kolkata</small>
-</dd>
-</div>
-<div>
-<dt>People with access</dt>
-<dd>{{ team_count }} team member{{ team_count|pluralize }}<small>Administrator and staff permissions</small>
-</dd>
-</div>
-<div>
-<dt>Billing channels selected</dt>
-<dd>{% if workspace.use_api %}<span>Website / API</span>{% endif %}{% if workspace.use_hosted %}<span>Links and QR codes</span>{% endif %}{% if workspace.use_manual %}<span>Manual billing</span>{% endif %}<small>Manual billing is available. Other channels are planned.</small>
-</dd>
-</div>
-</dl>
-</section>
-<aside class="next-step">
-<h2>Billing at a glance</h2>
-<dl class="stat-row stacked">
-<div>
-<dt>Outstanding</dt>
-<dd>{{ billing.outstanding|inr }}<small>{{ billing.open_count }} invoice{{ billing.open_count|pluralize }} awaiting payment</small>
-</dd>
-</div>
-<div>
-<dt>Overdue</dt>
-<dd>{{ billing.overdue|inr }}<small>{{ billing.overdue_count }} invoice{{ billing.overdue_count|pluralize }} past the due date</small>
-</dd>
-</div>
-</dl>
-<a class="button" href="{% url 'invoices' workspace.pk %}">Open invoices</a>
-<div class="next-part">
-<h3>Next: links, QR codes, and payments</h3>
-<p>Manual billing is available now. Online collection is not enabled yet; record payments collected outside Mandali on each invoice.</p>
-</div>
-</aside>
-</div>
-<section class="activity">
-<div class="section-heading">
-<h2>Workspace activity</h2>
-<a href="{% url 'reports_activity' workspace.pk %}">See all activity</a>
-</div>
-<ul class="activity-list">{% for event in activities %}<li>
-<div>
-<strong>{{ event.action }}</strong>
-<span>{% if event.actor_label %}{{ event.actor_label }}{% elif event.is_system %}Mandali automation{% else %}{{ event.actor.first_name|default:'Account removed' }}{% endif %}{% if event.detail %}: {{ event.detail }}{% endif %}</span>
-</div>
-<time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'d M Y, H:i' }} IST</time>
-</li>{% empty %}<li>No activity yet. Business and team changes will appear here.</li>{% endfor %}</ul>
-</section>{% endblock %}
+<div class="page-heading"><div><h1>Overview</h1><p>Invoices, collections and your next billing tasks.</p></div><div class="heading-actions"><a class="button quiet" href="{% url 'customer_create' workspace.pk %}">Add customer</a><a class="button" href="{% url 'invoice_create' workspace.pk %}">Create invoice</a></div></div>
+{% include 'billing/report_filters.html' %}
+{% include 'billing/metric_cards.html' %}
+<div class="finance-workbench">{% include 'billing/revenue_chart.html' %}<section class="collection-queue"><div class="section-heading"><h2>Needs attention</h2><span class="tag status-overdue">{{ metrics.overdue_count }} overdue</span></div><div class="amount-heading">{{ metrics.overdue|inr }}</div><p class="field-help">Past due and still awaiting payment.</p><ul class="action-list">{% for invoice in overdue_invoices %}<li><div><a href="{% url 'invoice_detail' workspace.pk invoice.pk %}">{{ invoice.number }}</a><small>{{ invoice.customer_name }}<br>Due {{ invoice.due_date|date:'d M' }}</small></div><strong>{{ invoice.balance|inr }}</strong></li>{% empty %}<li><div><strong>No overdue invoices</strong><small>Your collections are up to date.</small></div></li>{% endfor %}</ul><a class="button quiet full" href="{% url 'invoices' workspace.pk %}?status=overdue">Open invoices</a></section></div>
+<section class="setup-panel"><div class="section-heading"><h2>Your billing workflow</h2>{% if is_admin %}<a href="{% url 'analytics' workspace.pk %}">View analytics</a>{% endif %}</div><ol class="setup-steps">{% for label, link, done in setup_steps %}<li class="{% if done %}complete{% endif %}"><span class="step-number" aria-hidden="true">{{ forloop.counter }}</span><div><a href="{{ link }}">{{ label }}</a><small>{% if done %}Ready{% else %}Next step{% endif %}</small></div></li>{% endfor %}</ol></section>
+<div class="overview-lower"><section class="business-details"><h2>Workspace essentials</h2><dl class="essentials"><div><dt>Business identity</dt><dd>{{ workspace.legal_name }}<small>{{ workspace.billing_email }}</small></dd></div><div><dt>Currency &amp; time</dt><dd>Indian rupee (INR)<small>Asia/Kolkata</small></dd></div><div><dt>People with access</dt><dd>{{ team_count }} team member{{ team_count|pluralize }}<small>Administrator and staff permissions</small></dd></div><div><dt>Billing channels selected</dt><dd>{% if workspace.use_api %}<span>Website / API</span>{% endif %}{% if workspace.use_hosted %}<span>Links and QR codes</span>{% endif %}{% if workspace.use_manual %}<span>Manual billing</span>{% endif %}<small>Online gateway collection uses sandbox payments.</small></dd></div></dl></section>
+<section class="activity"><div class="section-heading"><h2>Workspace activity</h2><a href="{% url 'reports_activity' workspace.pk %}">See all activity</a></div><ul class="activity-list">{% for event in activities %}<li><div><strong>{{ event.action }}</strong><span>{% if event.actor_label %}{{ event.actor_label }}{% elif event.is_system %}Mandali automation{% else %}{{ event.actor.first_name|default:'Account removed' }}{% endif %}{% if event.detail %}: {{ event.detail }}{% endif %}</span></div><time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'d M Y, H:i' }} IST</time></li>{% empty %}<li>No activity yet. Business and team changes will appear here.</li>{% endfor %}</ul></section></div>
+{% endblock %}

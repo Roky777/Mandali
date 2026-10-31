@@ -174,7 +174,14 @@ def context(membership):
 
 @workspace_access()
 def dashboard(request, membership):
-    data = context(membership)
+    from billing.reporting import report_data
+    data = {**context(membership), **report_data(membership.workspace, request.GET)}
+    data["setup_steps"] = [
+        ("Add a customer", reverse("customer_create", args=[membership.workspace.pk]), membership.workspace.customer_set.exists()),
+        ("Create a plan", reverse("catalog_create", args=[membership.workspace.pk, "plans"]), membership.workspace.plan_set.exists()),
+        ("Prepare a quotation", reverse("subscription_create", args=[membership.workspace.pk]), membership.workspace.subscription_set.exists()),
+        ("Issue an invoice", reverse("invoices", args=[membership.workspace.pk]), membership.workspace.invoice_set.exclude(status="draft").exists()),
+    ]
     data.update(
         {
             "team_count": Membership.objects.filter(

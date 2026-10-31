@@ -80,6 +80,14 @@ def describe_item(plan=None, product=None, variant=None):
 
 def build_line(line_class, item, quantity, **parent):
     description, unit_price, tax = describe_item(**item)
+    plan = item.get("plan")
+    if plan and quantity < plan.min_quantity:
+        raise BillingError(f"This plan requires at least {plan.min_quantity} units.")
+    if item.get("variant") and plan:
+        if plan.product_id and item["variant"].product_id != plan.product_id:
+            raise BillingError("The variant does not belong to this plan product.")
+        unit_price += item["variant"].price_adjustment
+        description += ": " + item["variant"].name
     if unit_price < 0:
         raise BillingError("This item's price is below zero. Update the catalog first.")
     return line_class(
@@ -205,7 +213,11 @@ def remove_invoice_line(invoice, line_id):
 @transaction.atomic
 def add_subscription_line(subscription, item, quantity):
     claim_draft(Subscription, subscription.pk, Subscription.Status.DRAFT)
-    build_line(SubscriptionLine, item, quantity, subscription=subscription).save()
+    replacement = build_line(SubscriptionLine, item, quantity, subscription=subscription)
+    existing = subscription.lines.filter(plan=item.get("plan"), variant=item.get("variant")).first() if item.get("plan") else None
+    if existing and item.get("plan"):
+        replacement.pk = existing.pk
+    replacement.save()
     recalculate_subscription(subscription)
 
 
@@ -228,6 +240,9 @@ def create_subscription(form, user, template=None):
             timezone.localdate() + timedelta(days=template.validity_days)
         )
         subscription.notes = subscription.notes or template.notes
+    if subscription.plan_id and subscription.start_date and not subscription.expiry_date:
+        from recurring.calendar import advance
+        subscription.expiry_date = advance(subscription.start_date, subscription.plan.period, subscription.start_date) - timedelta(days=1)
     subscription.save()
     if template:
         SubscriptionLine.objects.bulk_create(
@@ -241,6 +256,9 @@ def create_subscription(form, user, template=None):
                 "plan__tax", "product__tax", "variant__product__tax"
             )
         )
+        recalculate_subscription(subscription)
+    elif subscription.plan_id:
+        build_line(SubscriptionLine, {"plan": subscription.plan, "product": subscription.plan.product, "variant": None}, subscription.plan.min_quantity, subscription=subscription).save()
         recalculate_subscription(subscription)
     log(subscription.workspace, user, "Quotation created", subscription.number)
     return subscription
@@ -262,10 +280,10 @@ def transition_problem(subscription, action, today):
     if action == "send":
         if not subscription.lines.exists():
             return "Add at least one line before sending the quotation."
-        if not subscription.valid_until or subscription.valid_until < today:
+        if not subscription.template_id and (not subscription.valid_until or subscription.valid_until < today):
             return "Set a quotation validity date that is today or later."
-    if action == "confirm" and subscription.valid_until < today:
-        return f"This quotation expired on {subscription.valid_until:%d %b %Y}."
+    if action == "confirm" and (not subscription.valid_until or subscription.valid_until < today):
+        return "This quotation has expired. Prepare a new quotation before confirming."
     if action == "activate":
         if not plan:
             return "Choose a plan before activating a subscription."
@@ -273,9 +291,9 @@ def transition_problem(subscription, action, today):
             return "Set a start date before activating."
         if not plan.available_on(subscription.start_date):
             return "The plan is not available on the subscription's start date."
-    if action == "pause" and not plan.can_pause:
+    if action == "pause" and (not plan or not plan.can_pause):
         return "This plan does not allow pausing."
-    if action == "close" and not plan.can_close:
+    if action == "close" and (not plan or not plan.can_close):
         if not subscription.expiry_date or today < subscription.expiry_date:
             return "This plan does not allow closing before the expiry date."
     return None
@@ -306,7 +324,15 @@ def transition(subscription, action, user, actor_label=""):
     ).update(status=target, updated_at=timezone.now()):
         raise BillingError("The subscription changed. Reload and try again.")
     log(subscription.workspace, user, label, subscription.number, actor_label)
+    if action == "send" and subscription.template_id:
+        Subscription.objects.filter(pk=subscription.pk).update(valid_until=timezone.localdate() + timedelta(days=subscription.template.validity_days))
     on_transition(subscription, action)
+    if action == "activate" and subscription.auto_invoice and not Schedule.objects.filter(subscription=subscription).exists():
+        Schedule.objects.create(subscription=subscription, mode="invoice", anchor_on=subscription.start_date, next_bill_on=subscription.start_date, period=subscription.plan.period, reminders=True, created_by=user)
+    if action == "pause":
+        Subscription.objects.filter(pk=subscription.pk).update(paused_on=timezone.localdate())
+    elif action == "resume":
+        Subscription.objects.filter(pk=subscription.pk).update(paused_on=None)
 
 
 @transaction.atomic
@@ -325,6 +351,9 @@ def invoice_from_subscription(subscription, user):
         subscription=subscription,
         payment_terms_days=subscription.payment_terms_days,
         created_by=user,
+        source_channel=subscription.source_channel,
+        utm_source=subscription.utm_source, utm_medium=subscription.utm_medium,
+        utm_campaign=subscription.utm_campaign, utm_content=subscription.utm_content,
     )
     InvoiceLine.objects.bulk_create(
         InvoiceLine(

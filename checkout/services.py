@@ -226,7 +226,7 @@ def nonce(link, current_quote):
 
 
 @transaction.atomic
-def create_session(link, buyer, signed_nonce):
+def create_session(link, buyer, signed_nonce, attribution=None):
     try:
         claim = signing.loads(signed_nonce, salt=NONCE_SALT, max_age=900)
     except signing.BadSignature:
@@ -297,6 +297,11 @@ def create_session(link, buyer, signed_nonce):
             raise CheckoutError(
                 "The price changed. Refresh checkout before continuing."
             )
+    if not link.invoice_id and attribution:
+        Invoice.objects.filter(pk=invoice.pk).update(**{
+            "utm_" + key: str(attribution.get(key, ""))[:100]
+            for key in ["source", "medium", "campaign", "content"]
+        })
     session = CheckoutSession.objects.create(
         link=link,
         invoice=invoice,
