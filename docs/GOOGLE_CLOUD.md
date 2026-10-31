@@ -59,6 +59,8 @@ From the repository root:
 gcloud builds submit --project YOUR_PROJECT_ID --config cloudbuild.yaml
 ```
 
+The Dockerfile and its context allowlist include both current Django apps (`core` and `billing`). When adding another app, include its package in both files; the container CI check verifies that Django can load every installed app.
+
 The image is tagged with the build ID and pushed to:
 
 ```text

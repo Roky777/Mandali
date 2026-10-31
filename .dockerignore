@@ -4,6 +4,8 @@
 !config/**
 !core/
 !core/**
+!billing/
+!billing/**
 !templates/
 !templates/**
 !static/

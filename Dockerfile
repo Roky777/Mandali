@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && useradd --create-home --uid 10001 app
 COPY config ./config
 COPY core ./core
+COPY billing ./billing
 COPY templates ./templates
 COPY static ./static
 COPY manage.py gunicorn.conf.py ./
