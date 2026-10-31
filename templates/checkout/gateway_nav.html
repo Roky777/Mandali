@@ -1,0 +1,1 @@
+<nav class="subtabs" aria-label="Payment gateways">{% for value, label in providers %}<a href="{% url 'checkout_gateway_provider' workspace.pk value %}" {% if value == provider %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}<a href="{% url 'checkout_routing' workspace.pk %}" {% if not provider %}aria-current="page"{% endif %}>Gateway selection</a></nav>

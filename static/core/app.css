@@ -1,7 +1,7 @@
 /* Hallmark · shape: app screen · genre: modern-minimal · theme: Dose, blue and white by user preference
  * nav: top bar and workspace tabs, catalog and filter subtabs · signature: workspace essentials ledger; invoice balance ledger; sync preview · states: empty, error, full, submitting, draft, issued, overdue, paid, cancelled
  * axes: light/system-sans/blue · posture: restrained · dose: white, no imagery or decorative motion · v2.0.0 */
-/* Hallmark · finish-review: subagent, ship; mobile member rows refined after review. Login sweep: 0 FAIL, 0 REFLEX, 0 WARN. Part 2 billing sweep, 17 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 4 sweep, 26 screens: 0 FAIL, 0 REFLEX, 0 WARN. */
+/* Hallmark · finish-review: subagent, ship; mobile member rows refined after review. Login sweep: 0 FAIL, 0 REFLEX, 0 WARN. Part 2 billing sweep, 17 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 4 sweep, 26 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 6 sweep, 32 screens: 0 FAIL, 0 REFLEX, 0 WARN. */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, kept business settings and access as the screen's substance */
 @import url('./tokens.css');
 @import url('./base.css');
@@ -288,6 +288,21 @@ input.code { font-family: var(--font-outlier); }
 .code-list { max-width: 420px; }
 .notice a { color: var(--color-accent); }
 .nowrap { white-space: nowrap; }
+/* Part 6: gateway selection */
+.routing-forms { margin-block: var(--space-2xl); }
+.recommend-form, .override-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-lg); align-items: start; margin-top: var(--space-md); max-width: 880px; }
+.override-form { grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 2fr) auto; align-items: end; max-width: none; }
+.override-form label { margin-bottom: var(--space-2xs); }
+.recommendation { list-style: none; padding: 0; margin: var(--space-lg) 0 var(--space-sm); border-top: 1px solid var(--color-rule); max-width: 880px; }
+.recommendation li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-lg); padding-block: var(--space-md); border-bottom: 1px solid var(--color-rule); }
+.recommendation strong, .recommendation span { display: block; }
+.recommendation div span { color: var(--color-muted); font-size: var(--text-sm); }
+@media (max-width:40rem) {
+ .recommend-form, .override-form { grid-template-columns: minmax(0, 1fr); }
+ .recommendation li { flex-wrap: wrap; gap: var(--space-xs); }
+}
+.privacy-note .field-help, section > .field-help { max-width: 70ch; }
+.check-group input[type=radio] { width: 20px; height: 20px; min-height: 0; padding: 0; flex-shrink: 0; accent-color: var(--color-accent); }
 
 /* Recurring billing: keep secondary cycle and delivery values readable. */
 .automation-page :is(td, .plain-list li) small { display: block; margin-top: var(--space-xs); }

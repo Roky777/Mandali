@@ -4,7 +4,7 @@ Mandali hosts a mobile checkout for a product, a plan's initial payment, or an i
 
 ## Configure a test gateway
 
-Only Razorpay **Test** keys (`rzp_test_…`) are accepted. Live collection, refunds, and gateway routing are later parts. Part 5 adds a separate [authorized recurring flow](RECURRING.md). Test transactions create separate `TST` invoices and are excluded from the financial dashboard and real discount usage. Sandbox billing events do not send website fulfillment webhooks. API invoice representations include `is_sandbox` for clarity. An invoice created manually must have **Sandbox invoice** selected before issuing it to use checkout.
+Only Razorpay **Test** keys (`rzp_test_…`) are accepted here. Part 6 adds Cashfree Sandbox and gateway routing; see [gateway routing](GATEWAY_ROUTING.md). Live collection and refunds are later parts. Part 5 adds a separate [authorized recurring flow](RECURRING.md). Test transactions create separate `TST` invoices and are excluded from the financial dashboard and real discount usage. Sandbox billing events do not send website fulfillment webhooks. API invoice representations include `is_sandbox` for clarity. An invoice created manually must have **Sandbox invoice** selected before issuing it to use checkout.
 
 1. Install requirements and run `python manage.py migrate` as in the main setup guide.
 2. Generate a dedicated encryption key locally with `python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'`. Keep it private. Set `PAYMENT_ENCRYPTION_KEYS` to that key in the server environment; there is no default. Set `MANDALI_BASE_URL` to the exact public origin (HTTPS in production). Existing links and credentials cannot be decrypted if the key is lost.

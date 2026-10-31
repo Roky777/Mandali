@@ -19,4 +19,16 @@ class PrivateResponseMiddleware:
                 "connect-src 'self' https://*.razorpay.com; img-src 'self' data: https://*.razorpay.com; "
                 "font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
             )
+        if getattr(request, "cashfree_checkout", False):
+            # Cashfree's sandbox checkout opens in this tab and may post a
+            # form to its own domain, so form-action allows it too.
+            response["Content-Security-Policy"] = (
+                "default-src 'self'; style-src 'self' 'unsafe-inline'; "
+                "script-src 'self' https://sdk.cashfree.com; "
+                "frame-src https://sandbox.cashfree.com https://*.cashfree.com; "
+                "connect-src 'self' https://sandbox.cashfree.com https://*.cashfree.com; "
+                "img-src 'self' data: https://*.cashfree.com; font-src 'self'; object-src 'none'; "
+                "base-uri 'self'; frame-ancestors 'none'; "
+                "form-action 'self' https://sandbox.cashfree.com https://*.cashfree.com"
+            )
         return response

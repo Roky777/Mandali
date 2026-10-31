@@ -148,7 +148,7 @@ def prepare(schedule, user):
             )
         if mandate is None:
             gateway = GatewayAccount.objects.filter(
-                workspace_id=sub.workspace_id, is_active=True
+                workspace_id=sub.workspace_id, provider="razorpay", is_active=True
             ).first()
             if not gateway:
                 raise CheckoutError("Configure a Razorpay Test gateway first.")

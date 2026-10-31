@@ -5,12 +5,15 @@
 </div>
 <a class="button" href="{% url 'checkout_link_create' workspace.pk %}">Create payment link</a>
 </div>
-<div class="notice">Razorpay Test only. Test invoices and payments are excluded from financial summaries.</div>
+<div class="notice">Sandbox gateways only. Test invoices and payments are excluded from financial summaries.</div>
 <div class="section-heading">
 <div>
-<h2>Gateway connection</h2>
-<p>{% if gateway %}Razorpay Test is configured.{% else %}Sandbox checkout needs a gateway connection.{% endif %}</p>
-</div>{% if is_admin %}<a href="{% url 'checkout_gateway' workspace.pk %}">Configure gateway</a>{% else %}<span class="muted">An administrator manages credentials.</span>{% endif %}</div>
+<h2>Gateway connections</h2>
+<p>{% if gateways %}{% for account in gateways %}{{ account.get_provider_display }}{% if not forloop.last %} and {% endif %}{% endfor %} connected.{% else %}Sandbox checkout needs a gateway connection.{% endif %}</p>
+</div>{% if is_admin %}<div class="heading-actions">
+<a href="{% url 'checkout_gateway' workspace.pk %}">Configure gateways</a>
+<a href="{% url 'checkout_routing' workspace.pk %}">Gateway selection</a>
+</div>{% else %}<span class="muted">An administrator manages gateways and routing.</span>{% endif %}</div>
 <section class="activity">
 <h2>Payment links</h2>{% if links %}<ul class="activity-list">{% for link in links %}<li>
 <div>
@@ -25,13 +28,13 @@
 </section>{% endif %}</section>
 <section class="activity">
 <h2>Gateway attempts</h2>
-<p class="muted">An order can have several payment attempts at Razorpay. Retries use the same order.</p>{% if attempts %}<ul class="activity-list">{% for attempt in attempts %}<li>
+<p class="muted">An order can have several payment attempts at its gateway. Retries use the same order.</p>{% if attempts %}<ul class="activity-list">{% for attempt in attempts %}<li>
 <div>
 <a href="{% url 'invoice_detail' workspace.pk attempt.invoice_id %}">
 <strong>{{ attempt.invoice.number }}</strong>
 </a>
-<span>{{ attempt.get_status_display }}</span>
+<span>{{ attempt.gateway.get_provider_display }}: {{ attempt.get_status_display }}</span>{% if attempt.routing %}<span>{{ attempt.routing.explanation }}</span>{% endif %}
 <span>{{ attempt.detail }}</span>
-<span>Receipt for order lookup: {{ attempt.pk.hex }}</span>{% if attempt.provider_order_id %}<span>Order: {{ attempt.provider_order_id }}</span>{% endif %}{% if attempt.observed_payment_id %}<span>Observed capture: {{ attempt.observed_payment_id }}</span>{% endif %}{% if attempt.provider_payment_id %}<span>Payment: {{ attempt.provider_payment_id }}</span>{% endif %}</div>{% if is_admin and attempt.status != 'paid' %}<form class="reason-form" method="post" action="{% url 'checkout_attempt_reconcile' workspace.pk attempt.pk %}">{% csrf_token %}{% if not attempt.provider_order_id %}<label for="order-{{ attempt.pk }}">Order ID from Razorpay Test</label>
+<span>Reference for order lookup: {% if attempt.gateway.provider == 'cashfree' %}order_{% endif %}{{ attempt.pk.hex }}</span>{% if attempt.provider_order_id %}<span>Order: {{ attempt.provider_order_id }}</span>{% endif %}{% if attempt.observed_payment_id %}<span>Observed capture: {{ attempt.observed_payment_id }}</span>{% endif %}{% if attempt.provider_payment_id %}<span>Payment: {{ attempt.provider_payment_id }}</span>{% endif %}</div>{% if is_admin and attempt.status != 'paid' %}<form class="reason-form" method="post" action="{% url 'checkout_attempt_reconcile' workspace.pk attempt.pk %}">{% csrf_token %}{% if not attempt.provider_order_id %}<label for="order-{{ attempt.pk }}">Order ID from {{ attempt.gateway.get_provider_display }}</label>
 <input id="order-{{ attempt.pk }}" name="order_id" maxlength="100" required placeholder="order_…">{% endif %}<button class="button quiet" type="submit">Check provider status</button>
 </form>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">No gateway orders have been started.</p>{% endif %}</section>{% endblock %}

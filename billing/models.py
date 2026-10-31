@@ -425,6 +425,10 @@ class Payment(models.Model):
         CARD = "card", "Card terminal"
         OTHER = "other", "Other"
         RAZORPAY_TEST = "rzp_test", "Razorpay Test (no real money)"
+        CASHFREE_TEST = "cf_test", "Cashfree Sandbox (no real money)"
+
+    # Recorded only from verified gateway evidence, never by hand.
+    GATEWAY_METHODS = frozenset({Method.RAZORPAY_TEST, Method.CASHFREE_TEST})
 
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
     invoice = models.ForeignKey(
@@ -460,7 +464,11 @@ class Payment(models.Model):
                 condition=Q(amount__gt=0), name="payment_amount_positive"
             ),
             models.CheckConstraint(
-                condition=Q(method="rzp_test") | Q(recorded_by__isnull=False),
+                condition=Q(method__in=["rzp_test", "cf_test"]) | Q(recorded_by__isnull=False),
                 name="manual_payment_has_recorder",
             ),
         ]
+
+    @property
+    def is_gateway(self):
+        return self.method in self.GATEWAY_METHODS

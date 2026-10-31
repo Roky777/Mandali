@@ -399,7 +399,7 @@ class PaymentForm(forms.ModelForm):
             *[
                 (value, label)
                 for value, label in Payment.Method.choices
-                if value != Payment.Method.RAZORPAY_TEST
+                if value not in Payment.GATEWAY_METHODS
             ],
         ]
 

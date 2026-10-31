@@ -10,7 +10,7 @@ There are two business audiences: those with a website or application, and those
 
 Terminology: a **business** is a merchant using Mandali; a **customer** buys from that business. Every business owns an isolated workspace. Business administrators, staff, and end customers have different permissions. Platform administration must be separate from merchant administration.
 
-This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 3 is implemented with Razorpay Test only; see [checkout setup](CHECKOUT.md). Part 4 is implemented; see [API integration](INTEGRATIONS.md). Part 5 is implemented; see [recurring billing](RECURRING.md). Parts 6 through 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
+This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 3 is implemented with Razorpay Test only; see [checkout setup](CHECKOUT.md). Part 4 is implemented; see [API integration](INTEGRATIONS.md). Part 5 is implemented; see [recurring billing](RECURRING.md). Part 6 adds sandbox gateway routing; see [gateway routing](GATEWAY_ROUTING.md). Parts 7 and 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
 
 ## Three ways to use the same billing system
 
@@ -80,6 +80,8 @@ A reusable plan checkout link creates a new checkout session for each customer. 
 
 **Reviewable result:** The same eligible payment is routed predictably under a saved policy, with an explanation. An incompatible gateway is never selected. A merchant can change the default or disable automatic selection. Missing performance data is shown as unknown, with a deterministic default.
 
+**Status:** Implemented in sandbox. Cashfree is the second gateway. Fees, limits, and settlement times are entered by the merchant, and success rates are measured from the business's own orders. Real provider verification on a deployed HTTPS service is still required.
+
 **Boundary:** There is no universally best gateway. Recommendations require current, merchant-specific inputs; no invented fees or success-rate claims. Automatic selection cannot open or approve a merchant account. Do not assume tokens or mandates can move between providers. On a timeout, reconcile the original attempt before considering a new charge; fallback is allowed only after a definitive safe failure and with a compatible payment authorization.
 
 ### Part 7: Customer portal, reporting, and operational controls
@@ -135,4 +137,4 @@ Confirmed: India first, INR, businesses with or without websites, API plus hoste
 
 Stack selected for Part 1: Django 5.2 LTS with SQLite locally. Hosting is selected: Google Cloud Run, Cloud SQL PostgreSQL, Artifact Registry, and Secret Manager; see [deployment guide](GOOGLE_CLOUD.md). Still to select during later design: first supported website/API shape; live gateway merchant eligibility; supported business/tax scenarios; partial-payment policies; subscription upgrade/downgrade and proration rules; delivery provider; and business branding controls. Validate current provider capabilities, account access, and tax obligations at implementation time rather than hard-coding assumptions now.
 
-Parts 1 through 5 are implemented for review. Next implementation task after that review: Part 6 only. Continue to take each later part as a separate increment.
+Parts 1 through 6 are implemented for review. Next implementation task after that review: Part 7 only. Continue to take each later part as a separate increment.

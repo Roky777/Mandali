@@ -44,14 +44,28 @@ def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
+# Only sandbox credentials are accepted: Razorpay Test key IDs start with
+# rzp_test_, and Cashfree Sandbox app IDs start with TEST.
+TEST_KEY_PATTERNS = {
+    "razorpay": r"rzp_test_[A-Za-z0-9]+",
+    "cashfree": r"TEST[A-Za-z0-9]{4,96}",
+}
+# Cashfree signs webhooks with the client secret, so it has no separate secret.
+SECRET_FIELDS = {
+    "razorpay": ("key_secret", "webhook_secret"),
+    "cashfree": ("key_secret",),
+}
+
+
 def credentials(account):
-    if not re.fullmatch(r"rzp_test_[A-Za-z0-9]+", account.key_id):
-        raise CheckoutError("Only Razorpay Test mode is supported.")
+    pattern = TEST_KEY_PATTERNS.get(account.provider)
+    if not pattern or not re.fullmatch(pattern, account.key_id):
+        raise CheckoutError("Only sandbox (test mode) gateway credentials are supported.")
     try:
         result = json.loads(decrypt(account.secrets_ciphertext))
         if not isinstance(result, dict) or any(
             not isinstance(result.get(key), str) or not result[key]
-            for key in ("key_secret", "webhook_secret")
+            for key in SECRET_FIELDS[account.provider]
         ):
             raise ValueError()
         return result

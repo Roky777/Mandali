@@ -1,8 +1,16 @@
 from urllib.parse import urlencode
 from checkout.gateways import RazorpayTest, GatewayError, identifier
+from checkout.crypto import CheckoutError
 
 
 class RecurringGateway(RazorpayTest):
+    def __init__(self, account):
+        if account.provider != "razorpay":
+            raise CheckoutError(
+                "Recurring collection requires a Razorpay Test account. One-time gateway routing cannot move a mandate."
+            )
+        super().__init__(account)
+
     def create_plan(self, mandate):
         return self.request(
             "POST",

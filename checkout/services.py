@@ -24,6 +24,7 @@ from billing.models import (
     Source,
 )
 from core.models import Activity, Workspace
+from . import routing
 from .crypto import CheckoutError, cipher, decrypt, digest, encrypt
 from .gateways import (
     GatewayError,
@@ -37,8 +38,14 @@ from .models import (
     GatewayAccount,
     GatewayEvent,
     PaymentAttempt,
+    Provider,
     ShareLink,
 )
+
+LEDGER_METHODS = {
+    Provider.RAZORPAY: Payment.Method.RAZORPAY_TEST,
+    Provider.CASHFREE: Payment.Method.CASHFREE_TEST,
+}
 
 PENDING = ["creating", "ready", "unknown", "authorized", "review"]
 SESSION_SALT = "mandali.checkout.session.v1"
@@ -71,23 +78,23 @@ def log(workspace_id, user, action, detail=""):
 
 
 @transaction.atomic
-def configure_gateway(workspace, user, data):
-    payload = encrypt(
-        json.dumps(
-            {"key_secret": data["key_secret"], "webhook_secret": data["webhook_secret"]}
-        )
-    )
+def configure_gateway(workspace, user, data, provider=Provider.RAZORPAY):
+    secrets_ = {"key_secret": data["key_secret"]}
+    if data.get("webhook_secret"):
+        secrets_["webhook_secret"] = data["webhook_secret"]
+    payload = encrypt(json.dumps(secrets_))
     lock_workspace(workspace.pk)
-    GatewayAccount.objects.filter(workspace=workspace, is_active=True).update(
-        is_active=False
-    )
+    GatewayAccount.objects.filter(
+        workspace=workspace, provider=provider, is_active=True
+    ).update(is_active=False)
     account = GatewayAccount.objects.create(
         workspace=workspace,
+        provider=provider,
         key_id=data["key_id"],
         secrets_ciphertext=payload,
         created_by=user,
     )
-    log(workspace.pk, user, "Razorpay Test gateway configured")
+    log(workspace.pk, user, f"{Provider(provider).label} gateway configured")
     return account
 
 
@@ -294,6 +301,7 @@ def create_session(link, buyer, signed_nonce):
         link=link,
         invoice=invoice,
         creation_digest=digest(signed_nonce),
+        buyer_phone=(buyer.get("phone") or "")[:20],
         expires_at=timezone.now() + timedelta(hours=2),
     )
     log(link.workspace_id, None, "Sandbox checkout started", invoice.number)
@@ -352,10 +360,14 @@ def store_order(attempt, order):
     if attempt.provider_order_id and attempt.provider_order_id != order_id:
         raise GatewayError("This attempt already belongs to another gateway order.")
     attempt.provider_order_id = order_id
+    if order.get("client_token"):
+        attempt.client_token = order["client_token"]
     if attempt.status in ("creating", "unknown", "rejected"):
         attempt.status = "ready"
         attempt.detail = "Gateway order created. No payment has been recorded."
-    attempt.save(update_fields=["provider_order_id", "status", "detail", "updated_at"])
+    attempt.save(
+        update_fields=["provider_order_id", "client_token", "status", "detail", "updated_at"]
+    )
     return attempt
 
 
@@ -375,23 +387,29 @@ def begin(session):
             invoice=invoice, status__in=PENDING
         ).first()
         created = attempt is None
+        unrouted = False
         if created:
-            gateway = GatewayAccount.objects.filter(
-                workspace_id=invoice.workspace_id, is_active=True
-            ).first()
-            if gateway is None:
-                raise CheckoutError(
-                    "This business has not enabled sandbox payments yet."
+            # Routing filters out incompatible gateways and validates
+            # credentials before a reservation is claimed.
+            decision, gateway = routing.route(invoice, phone=session.buyer_phone)
+            # The decision is kept in routing history even when nothing is
+            # reserved, so the transaction commits before the error is raised.
+            unrouted = gateway is None
+        if not unrouted:
+            if created:
+                attempt = PaymentAttempt.objects.create(
+                    workspace_id=invoice.workspace_id,
+                    invoice=invoice,
+                    gateway=gateway,
+                    key_id=gateway.key_id,
+                    amount_paise=paise(invoice.balance),
                 )
-            adapter(gateway)  # Validate/decrypt before claiming a reservation.
-            attempt = PaymentAttempt.objects.create(
-                workspace_id=invoice.workspace_id,
-                invoice=invoice,
-                gateway=gateway,
-                key_id=gateway.key_id,
-                amount_paise=paise(invoice.balance),
-            )
-        CheckoutSession.objects.filter(pk=session.pk).update(attempt=attempt)
+                routing.link_attempt(decision, attempt)
+            CheckoutSession.objects.filter(pk=session.pk).update(attempt=attempt)
+    if unrouted:
+        raise CheckoutError(
+            "This business has no gateway that can accept this payment right now."
+        )
     if not created:
         return attempt
     try:
@@ -465,14 +483,15 @@ def apply_payment(attempt, entity):
             # Claim the provider capture before touching the ledger. A unique
             # constraint deduplicates callback/webhook races and changed headers.
             attempt.save(update_fields=["provider_payment_id"])
+            provider = Provider(attempt.gateway.provider)
             attempt.payment = billing.record_payment(
                 invoice,
                 None,
                 Decimal(attempt.amount_paise) / 100,
-                Payment.Method.RAZORPAY_TEST,
+                LEDGER_METHODS[provider],
                 timezone.localdate(),
                 reference=payment_id,
-                note="Verified Razorpay Test capture. No real money moved.",
+                note=f"Verified {provider.label} capture. No real money moved.",
             )
             attempt.status = "paid"
             attempt.detail = "Sandbox capture verified and recorded once."
@@ -518,7 +537,7 @@ def reconcile(attempt, order_id=""):
     if not attempt.provider_order_id:
         if not order_id:
             raise CheckoutError(
-                "Find the order by its receipt in Razorpay Test, then enter its order ID. A new order will not be created automatically."
+                "Find the order in the gateway's sandbox dashboard by the attempt reference shown here, then enter its order ID. A new order will not be created automatically."
             )
         attempt = store_order(attempt, gateway.fetch_order(order_id))
     entities = gateway.order_payments(attempt.provider_order_id)
@@ -532,7 +551,9 @@ def reconcile(attempt, order_id=""):
         return PaymentAttempt.objects.get(pk=attempt.pk)
     for entity in captured or authorized[:1]:
         payment_id = identifier(entity.get("id"), "pay")
-        return apply_payment(attempt, gateway.fetch_payment(payment_id))
+        return apply_payment(
+            attempt, gateway.fetch_payment(payment_id, order_id=attempt.provider_order_id)
+        )
     if not attempt.payment_id and attempt.status in ("ready", "authorized"):
         PaymentAttempt.objects.filter(pk=attempt.pk).update(
             status="ready",
@@ -547,9 +568,7 @@ def process_webhook(account, body, signature, event_id):
         raise GatewayError("Invalid webhook signature.")
     try:
         payload = json.loads(body)
-        event_type = payload["event"]
-        if not isinstance(event_type, str) or len(event_type) > 80:
-            raise ValueError()
+        event_type, supplied_payment, supplied_order = gateway.webhook_event(payload)
     except (ValueError, KeyError, TypeError):
         raise CheckoutError("Invalid webhook payload.") from None
     body_hash = hashlib.sha256(body).hexdigest()
@@ -566,16 +585,15 @@ def process_webhook(account, body, signature, event_id):
     attempt = None
     entity = None
     recurring_outcome = None
-    if event_type.startswith("subscription."):
+    if account.provider == Provider.RAZORPAY and event_type.startswith("subscription."):
         from recurring.collection import process_event
 
         recurring_outcome = process_event(account, payload)
-    if event_type in ("payment.captured", "payment.authorized", "payment.failed"):
+    if supplied_payment is not None:
         try:
-            supplied = payload["payload"]["payment"]["entity"]
-            payment_id = identifier(supplied["id"], "pay")
-            order_id = identifier(supplied["order_id"], "order")
-        except (KeyError, TypeError):
+            payment_id = identifier(supplied_payment, "pay")
+            order_id = identifier(supplied_order, "order")
+        except GatewayError:
             raise CheckoutError("Invalid payment event.") from None
         attempt = PaymentAttempt.objects.filter(
             gateway=account, provider_order_id=order_id
@@ -595,7 +613,7 @@ def process_webhook(account, body, signature, event_id):
             if candidate:
                 attempt = store_order(candidate, order)
         if attempt:
-            entity = gateway.fetch_payment(payment_id)
+            entity = gateway.fetch_payment(payment_id, order_id=order_id)
             if entity.get("id") != payment_id or entity.get("order_id") != order_id:
                 raise GatewayError(
                     "Webhook evidence belongs to another payment or order."

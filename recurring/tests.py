@@ -819,6 +819,52 @@ class RecurringTests(TestCase):
             with self.assertRaises(GatewayError):
                 gateway.invoices(mandate.subscription_id)
 
+    def test_one_time_cashfree_routing_does_not_move_recurring_mandates(self):
+        from checkout.models import RoutingPolicy
+
+        cashfree = checkout.configure_gateway(
+            self.workspace,
+            self.owner,
+            {"key_id": "TESTrecurring123", "key_secret": "cashfree-test-secret-only"},
+            provider="cashfree",
+        )
+        RoutingPolicy.objects.create(
+            workspace=self.workspace, default_provider="cashfree", updated_by=self.owner
+        )
+        mandate = self.automatic()
+        self.assertEqual(mandate.gateway_id, self.account.pk)
+        with self.assertRaises(CheckoutError):
+            RecurringGateway(cashfree)
+
+    def test_cashfree_is_not_used_when_razorpay_recurring_is_unavailable(self):
+        checkout.configure_gateway(
+            self.workspace,
+            self.owner,
+            {"key_id": "TESTrecurring123", "key_secret": "cashfree-test-secret-only"},
+            provider="cashfree",
+        )
+        self.account.is_active = False
+        self.account.save()
+        with self.assertRaises(CheckoutError):
+            self.automatic()
+        self.assertFalse(Mandate.objects.exists())
+
+    def test_gateway_rotation_retains_the_authorized_account(self):
+        mandate = self.automatic()
+        checkout.configure_gateway(
+            self.workspace,
+            self.owner,
+            {
+                "key_id": "rzp_test_rotated",
+                "key_secret": "rotated-test-secret-only",
+                "webhook_secret": "rotated-webhook-secret-only",
+            },
+        )
+        with self.provider(mandate):
+            collection.reconcile(mandate)
+        mandate.refresh_from_db()
+        self.assertEqual(mandate.gateway_id, self.account.pk)
+
 
 @skipUnless(connection.vendor == "postgresql", "PostgreSQL row-lock concurrency")
 @override_settings(PAYMENT_ENCRYPTION_KEYS=Fernet.generate_key().decode())

@@ -421,7 +421,7 @@ def record_payment(invoice, user, amount, method, received_on, reference="", not
             raise BillingError(
                 "The provider owns collection for this invoice. Reconcile the mandate instead of starting another collection."
             )
-    if method == Payment.Method.RAZORPAY_TEST and not invoice.is_sandbox:
+    if method in Payment.GATEWAY_METHODS and not invoice.is_sandbox:
         raise BillingError("Sandbox payments can only settle sandbox invoices.")
     amount = money(amount)
     if amount <= 0:
@@ -473,7 +473,7 @@ def duplicate_reference(payment):
 
 @transaction.atomic
 def reverse_payment(payment, user, reason):
-    if payment.method == Payment.Method.RAZORPAY_TEST:
+    if payment.method in Payment.GATEWAY_METHODS:
         raise BillingError(
             "Gateway payments require provider reconciliation. Refund workflows are not available yet."
         )
