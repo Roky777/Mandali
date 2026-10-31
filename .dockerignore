@@ -1,0 +1,15 @@
+*
+!requirements.txt
+!config/
+!config/**
+!core/
+!core/**
+!templates/
+!templates/**
+!static/
+!static/**
+!manage.py
+!gunicorn.conf.py
+!Dockerfile
+**/__pycache__/
+**/*.pyc

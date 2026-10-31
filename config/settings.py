@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
+from .environment import canonical_url, allowed_hosts, database_config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
@@ -11,7 +12,33 @@ if not SECRET_KEY:
             "Set DJANGO_SECRET_KEY or enable local DJANGO_DEBUG=1."
         )
     SECRET_KEY = "local-development-only-never-use-in-production"
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+if not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswith("django-insecure-")):
+    raise ImproperlyConfigured(
+        "Production DJANGO_SECRET_KEY must be a strong random value of at least 50 characters."
+    )
+MANDALI_BASE_URL = canonical_url(os.environ, DEBUG)
+ALLOWED_HOSTS = allowed_hosts(os.environ, DEBUG, MANDALI_BASE_URL)
+CSRF_TRUSTED_ORIGINS = [MANDALI_BASE_URL]
+for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(","):
+    if origin.strip():
+        CSRF_TRUSTED_ORIGINS.append(canonical_url({"MANDALI_BASE_URL": origin}, DEBUG))
+# Enable only behind Cloud Run's managed ingress, never on an exposed container.
+TRUST_CLOUD_RUN_PROXY = os.getenv("DJANGO_TRUST_CLOUD_RUN_PROXY", "0") == "1"
+if TRUST_CLOUD_RUN_PROXY and not os.getenv("K_SERVICE"):
+    raise ImproperlyConfigured(
+        "DJANGO_TRUST_CLOUD_RUN_PROXY requires a Cloud Run service environment."
+    )
+if TRUST_CLOUD_RUN_PROXY:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+TRUSTED_PROXY_HOPS = int(os.getenv("DJANGO_TRUSTED_PROXY_HOPS", "0"))
+if (
+    TRUSTED_PROXY_HOPS < 0
+    or TRUSTED_PROXY_HOPS > 5
+    or (TRUSTED_PROXY_HOPS and not TRUST_CLOUD_RUN_PROXY)
+):
+    raise ImproperlyConfigured(
+        "Proxy hop trust must be explicitly configured for Cloud Run (0 to 5 hops)."
+    )
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -22,6 +49,7 @@ INSTALLED_APPS = [
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -46,13 +74,7 @@ TEMPLATES = [
     }
 ]
 WSGI_APPLICATION = "config.wsgi.application"
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-        "OPTIONS": {"timeout": 20},
-    }
-}
+DATABASES = {"default": database_config(os.environ, DEBUG, BASE_DIR)}
 AUTH_USER_MODEL = "core.User"
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -72,6 +94,16 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        )
+    },
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "workspaces"
@@ -89,9 +121,6 @@ SECURE_HSTS_PRELOAD = False
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 PASSWORD_RESET_TIMEOUT = 3600
-MANDALI_BASE_URL = os.getenv("MANDALI_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
-if not DEBUG and not MANDALI_BASE_URL.startswith("https://"):
-    raise ImproperlyConfigured("Production MANDALI_BASE_URL must use HTTPS.")
 EMAIL_BACKEND = os.getenv(
     "DJANGO_EMAIL_BACKEND",
     (

@@ -1,0 +1,22 @@
+{
+  "project_id": "your-project-id",
+  "region": "asia-south1",
+  "service_name": "mandali",
+  "image_uri": "asia-south1-docker.pkg.dev/your-project-id/mandali/web@sha256:REPLACE_WITH_64_HEX_DIGEST",
+  "instance_connection_name": "your-project-id:asia-south1:mandali-db",
+  "app_service_account": "mandali-app@your-project-id.iam.gserviceaccount.com",
+  "migration_service_account": "mandali-migrations@your-project-id.iam.gserviceaccount.com",
+  "db_name": "mandali",
+  "app_db_user": "mandali_app",
+  "migration_db_user": "mandali_migrator",
+  "django_secret": "mandali-django-secret:1",
+  "app_db_secret": "mandali-app-db-password:1",
+  "migration_db_secret": "mandali-migration-db-password:1",
+  "smtp_secret": "mandali-smtp-password:1",
+  "email_host": "smtp.your-provider.com",
+  "email_port": "587",
+  "email_user": "your-smtp-user",
+  "from_email": "Mandali <noreply@your-domain.com>",
+  "trusted_proxy_hops": "0",
+  "base_url": ""
+}

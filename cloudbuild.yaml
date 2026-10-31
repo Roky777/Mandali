@@ -1,0 +1,11 @@
+# Build only. Runtime secrets and database access are not needed here.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/web:$BUILD_ID', '.']
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/web:$BUILD_ID'
+substitutions:
+  _REGION: asia-south1
+  _REPOSITORY: mandali
+options:
+  logging: CLOUD_LOGGING_ONLY

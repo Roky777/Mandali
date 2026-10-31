@@ -1,0 +1,13 @@
+.git/
+.venv/
+.env
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-*
+**/__pycache__/
+.hallmark/
+staticfiles/
+node_modules/
+Subscription_Management_System.pdf
+deploy/google-cloud/*.local.*
