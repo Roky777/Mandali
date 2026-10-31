@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core import signing
 from django.db import IntegrityError, transaction
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -19,13 +19,28 @@ from core.security import rate_limit
 from core.views import context, workspace_access
 from . import services
 from .crypto import CheckoutError, digest
-from .forms import BuyerForm, GatewayForm, LinkForm
+from . import routing
+from .forms import (
+    BuyerForm,
+    CashfreeForm,
+    GatewayForm,
+    LinkForm,
+    OverrideForm,
+    PolicyForm,
+    ProfileForm,
+    RecommendForm,
+)
 from .gateways import GatewayError, InvalidSignature, adapter
 from .models import (
     CheckoutSession,
     GatewayAccount,
     GatewayEvent,
+    GatewayProfile,
+    InvoiceRoute,
     PaymentAttempt,
+    Provider,
+    RoutingDecision,
+    RoutingPolicy,
     ShareLink,
 )
 
@@ -42,55 +57,113 @@ def links(request, membership):
     data.update(
         {
             "links": ShareLink.objects.filter(workspace=membership.workspace)[:100],
-            "gateway": GatewayAccount.objects.filter(
+            "gateways": GatewayAccount.objects.filter(
                 workspace=membership.workspace, is_active=True
-            ).first(),
+            ).order_by("provider"),
             "now": timezone.now(),
             "attempts": PaymentAttempt.objects.filter(
                 workspace=membership.workspace
-            ).select_related("invoice", "gateway")[:50],
+            ).select_related("invoice", "gateway", "routing")[:50],
         }
     )
     return render(request, "checkout/links.html", data)
 
 
+CREDENTIAL_FORMS = {Provider.RAZORPAY: GatewayForm, Provider.CASHFREE: CashfreeForm}
+WEBHOOK_ROUTES = {Provider.RAZORPAY: "checkout_webhook", Provider.CASHFREE: "checkout_webhook_cashfree"}
+
+
+def provider_or_404(provider):
+    if provider not in Provider.values:
+        raise Http404("Unknown gateway.")
+    return Provider(provider)
+
+
 @workspace_access(admin=True)
-def gateway_settings(request, membership):
-    form = GatewayForm(request.POST or None)
+def gateway_settings(request, membership, provider=Provider.RAZORPAY):
+    provider = provider_or_404(provider)
+    form = CREDENTIAL_FORMS[provider](request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
             services.configure_gateway(
-                membership.workspace, request.user, form.cleaned_data
+                membership.workspace, request.user, form.cleaned_data, provider
             )
         except CheckoutError as error:
             form.add_error(None, str(error))
         else:
             messages.success(
                 request,
-                "Razorpay Test credentials saved. Configure the webhook before collecting test payments.",
+                f"{provider.label} credentials saved. Configure the webhook before collecting test payments.",
             )
-            return redirect("checkout_gateway", workspace_id=membership.workspace.pk)
+            return redirect(
+                "checkout_gateway_provider", workspace_id=membership.workspace.pk, provider=provider
+            )
     account = GatewayAccount.objects.filter(
-        workspace=membership.workspace, is_active=True
+        workspace=membership.workspace, provider=provider, is_active=True
     ).first()
-    data = {**context(membership), "form": form, "gateway": account}
+    data = {
+        **context(membership),
+        "form": form,
+        "gateway": account,
+        "provider": provider,
+        "providers": Provider.choices,
+        "profile": GatewayProfile.objects.filter(workspace=membership.workspace, provider=provider).first(),
+    }
     if account:
         data["webhook_url"] = settings.MANDALI_BASE_URL + reverse(
-            "checkout_webhook", args=[account.pk]
+            WEBHOOK_ROUTES[provider], args=[account.pk]
         )
     return render(request, "checkout/gateway.html", data)
+
+
+@workspace_access(admin=True)
+def gateway_profile(request, membership, provider):
+    provider = provider_or_404(provider)
+    instance = GatewayProfile.objects.filter(workspace=membership.workspace, provider=provider).first()
+    form = ProfileForm(request.POST or None, instance=instance)
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            profile = form.save(commit=False)
+            profile.workspace = membership.workspace
+            profile.provider = provider
+            profile.updated_by = request.user
+            profile.save()
+            services.log(membership.workspace.pk, request.user, "Gateway account details updated", provider.label)
+        messages.success(request, f"{provider.label} account details saved.")
+        return redirect("checkout_routing", workspace_id=membership.workspace.pk)
+    return render(
+        request,
+        "core/form.html",
+        {
+            **context(membership),
+            "form": form,
+            "title": f"{provider.label} account details",
+            "description": "Describe this gateway account as your own contract and dashboard show it. Mandali uses these figures to explain recommendations and automatic routing, and never fills them in for you.",
+            "submit": "Save details",
+            "cancel_url": reverse("checkout_routing", args=[membership.workspace.pk]),
+            "facts": [
+                ("Unknown values", "Ranked after known ones, never guessed"),
+                ("Success rates", "Measured from your own attempts"),
+                ("Currency", "INR only"),
+            ],
+        },
+    )
 
 
 @require_POST
 @workspace_access(admin=True)
 def gateway_disable(request, membership):
+    provider = request.POST.get("provider", "")
     with transaction.atomic():
         services.lock_workspace(membership.workspace.pk)
-        GatewayAccount.objects.filter(
-            workspace=membership.workspace, is_active=True
-        ).update(is_active=False)
+        accounts = GatewayAccount.objects.filter(workspace=membership.workspace, is_active=True)
+        if provider in Provider.values:
+            accounts = accounts.filter(provider=provider)
+        accounts.update(is_active=False)
         services.log(
-            membership.workspace.pk, request.user, "Razorpay Test gateway disabled"
+            membership.workspace.pk,
+            request.user,
+            f"{Provider(provider).label if provider in Provider.values else 'Sandbox'} gateway disabled",
         )
     messages.success(
         request,
@@ -288,14 +361,23 @@ def session_view(request, token):
         "lines": invoice.lines.all(),
     }
     attempt = session.attempt
-    if (
+    ready = (
         attempt
         and attempt.status == "ready"
         and attempt.gateway.is_active
         and data["link_active"]
         and invoice.status == Invoice.Status.ISSUED
         and services.paise(invoice.balance) == attempt.amount_paise
-    ):
+    )
+    if ready and attempt.gateway.provider == Provider.CASHFREE and attempt.client_token:
+        data["gateway_options"] = {
+            "provider": "cashfree",
+            "mode": "sandbox",
+            "payment_session_id": attempt.client_token,
+        }
+        data["cashfree_checkout"] = True
+        request.cashfree_checkout = True
+    elif ready and attempt.gateway.provider == Provider.RAZORPAY:
         data["gateway_options"] = {
             "key": attempt.key_id,
             "amount": attempt.amount_paise,
@@ -367,29 +449,34 @@ def session_recheck(request, token):
     return redirect(services.session_url(session))
 
 
+def webhook_signature(account, request):
+    """Return the provider's signature value and event ID from the headers."""
+    if account.provider == Provider.CASHFREE:
+        timestamp = request.headers.get("x-webhook-timestamp", "")[:20]
+        return f"{timestamp}:{request.headers.get('x-webhook-signature', '')[:200]}", ""
+    return (
+        request.headers.get("X-Razorpay-Signature", ""),
+        request.headers.get("X-Razorpay-Event-Id", ""),
+    )
+
+
 @csrf_exempt
 @require_POST
-def webhook(request, account_id):
-    account = get_object_or_404(GatewayAccount, pk=account_id)
+def webhook(request, account_id, provider=Provider.RAZORPAY):
+    account = get_object_or_404(GatewayAccount, pk=account_id, provider=provider)
+    signature, event_id = webhook_signature(account, request)
     try:
         if int(request.META.get("CONTENT_LENGTH") or 0) > 262144:
             return JsonResponse({"error": "payload too large"}, status=413)
         body = request.body
         if len(body) > 262144:
             return JsonResponse({"error": "payload too large"}, status=413)
-        result = services.process_webhook(
-            account,
-            body,
-            request.headers.get("X-Razorpay-Signature", ""),
-            request.headers.get("X-Razorpay-Event-Id", ""),
-        )
+        result = services.process_webhook(account, body, signature, event_id)
     except GatewayError:
         # Invalid signatures must fail; valid events with a transient provider
         # failure need a retry. Do the signature check before network reads.
         try:
-            valid = adapter(account).valid_webhook(
-                request.body, request.headers.get("X-Razorpay-Signature", "")
-            )
+            valid = adapter(account).valid_webhook(request.body, signature)
         except CheckoutError:
             valid = False
         return JsonResponse(
@@ -401,3 +488,120 @@ def webhook(request, account_id):
     except (IntegrityError, ValueError):
         return JsonResponse({"error": "event requires reconciliation"}, status=409)
     return JsonResponse({"status": result})
+
+
+def routing_context(membership, recommend_form=None, policy_form=None, override_form=None):
+    workspace = membership.workspace
+    connected = set(
+        GatewayAccount.objects.filter(workspace=workspace, is_active=True).values_list("provider", flat=True)
+    )
+    policy = routing.policy_for(workspace)
+    found = routing.profiles(workspace)
+    rates = routing.success_rates(workspace)
+    gateways = [
+        {
+            "provider": value,
+            "label": label,
+            "connected": value in connected,
+            "profile": found.get(value),
+            "rate": rates.get(value),
+            "is_default": bool(policy and policy.default_provider == value),
+        }
+        for value, label in Provider.choices
+    ]
+    recommendation = None
+    if recommend_form is not None and recommend_form.is_bound and recommend_form.is_valid():
+        recommendation = routing.recommend(workspace, recommend_form.cleaned_data)
+    return {
+        **context(membership),
+        "policy": policy,
+        "gateways": gateways,
+        "connected": connected,
+        "policy_form": policy_form or PolicyForm(instance=policy, connected=connected),
+        "override_form": override_form or OverrideForm(workspace=workspace),
+        "recommend_form": recommend_form or RecommendForm(),
+        "recommendation": recommendation,
+        "overrides": InvoiceRoute.objects.filter(invoice__workspace=workspace).select_related("invoice", "set_by"),
+        "decisions": RoutingDecision.objects.filter(workspace=workspace).select_related("invoice", "attempt")[:50],
+        "min_sample": routing.SUCCESS_MIN_SAMPLE,
+        "providers": Provider.choices,
+        "provider": "",
+        "method_labels": dict(GatewayProfile.METHODS),
+    }
+
+
+@workspace_access(admin=True)
+def routing_overview(request, membership):
+    recommend_form = RecommendForm(request.GET) if "priority" in request.GET else None
+    return render(request, "checkout/routing.html", routing_context(membership, recommend_form=recommend_form))
+
+
+@require_POST
+@workspace_access(admin=True)
+def routing_policy(request, membership):
+    workspace = membership.workspace
+    policy = routing.policy_for(workspace)
+    connected = set(
+        GatewayAccount.objects.filter(workspace=workspace, is_active=True).values_list("provider", flat=True)
+    )
+    form = PolicyForm(request.POST, instance=policy, connected=connected)
+    if not form.is_valid():
+        return render(
+            request, "checkout/routing.html", routing_context(membership, policy_form=form), status=400
+        )
+    with transaction.atomic():
+        saved = form.save(commit=False)
+        saved.workspace = workspace
+        saved.updated_by = request.user
+        saved.save()
+        services.log(
+            workspace.pk,
+            request.user,
+            "Gateway routing policy updated",
+            f"{saved.get_mode_display()}; default {saved.get_default_provider_display() or 'none'}; prefer {saved.get_priority_display().lower()}",
+        )
+    messages.success(request, "Routing policy saved. It applies to payments prepared from now on.")
+    return redirect("checkout_routing", workspace_id=workspace.pk)
+
+
+@require_POST
+@workspace_access(admin=True)
+def routing_override(request, membership):
+    form = OverrideForm(request.POST, workspace=membership.workspace)
+    if not form.is_valid():
+        return render(
+            request, "checkout/routing.html", routing_context(membership, override_form=form), status=400
+        )
+    invoice = form.cleaned_data["invoice"]
+    with transaction.atomic():
+        InvoiceRoute.objects.update_or_create(
+            invoice=invoice,
+            defaults={
+                "provider": form.cleaned_data["provider"],
+                "reason": form.cleaned_data["reason"],
+                "set_by": request.user,
+            },
+        )
+        services.log(
+            membership.workspace.pk,
+            request.user,
+            "Gateway override set",
+            f"{invoice.number}: {Provider(form.cleaned_data['provider']).label}, {form.cleaned_data['reason']}",
+        )
+    messages.success(
+        request,
+        "Override saved. It applies to the next payment prepared for this invoice; an order already started keeps its gateway.",
+    )
+    return redirect("checkout_routing", workspace_id=membership.workspace.pk)
+
+
+@require_POST
+@workspace_access(admin=True)
+def routing_override_remove(request, membership, pk):
+    with transaction.atomic():
+        route = get_object_or_404(InvoiceRoute, pk=pk, invoice__workspace=membership.workspace)
+        services.log(membership.workspace.pk, request.user, "Gateway override removed", route.invoice.number)
+        route.delete()
+    messages.success(request, "Override removed. The routing policy applies again.")
+    return redirect("checkout_routing", workspace_id=membership.workspace.pk)
+

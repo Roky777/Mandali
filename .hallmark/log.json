@@ -4,6 +4,26 @@
     "theme": "dose",
     "shape": "app screen",
     "axes": "light/system-sans/blue",
+    "nav": "top bar, workspace tabs, gateway subtabs",
+    "footer": "quiet colophon",
+    "imagery": "none; actual app screens",
+    "signature": "routing history with explanations",
+    "sections": [
+      "gateway comparison",
+      "routing policy",
+      "recommendation",
+      "manual overrides",
+      "routing history"
+    ],
+    "waived": [],
+    "prompt": "Mandali Part 6, gateway selection in the Part 1 blue and white system",
+    "review": "sloplint --scope app --render clean on 32 screens; manual capture review"
+  },
+  {
+    "scope": "app",
+    "theme": "dose",
+    "shape": "app screen",
+    "axes": "light/system-sans/blue",
     "nav": "existing workspace tabs; scoped public checkout header",
     "footer": "quiet colophon",
     "imagery": "actual app screenshots with dummy data",

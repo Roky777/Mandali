@@ -25,6 +25,12 @@ Integrations is an administrator-only tab between Catalog and Team, with API key
 
 Rendered with dummy data, `sloplint --scope app --render` reported 0 FAIL, 0 REFLEX, and 0 WARN across 26 screens, after replacing capitalised sample codes, straight apostrophes, and a wrapping settings link. Captures of the keys, webhook, sync, and preview screens were reviewed at desktop and phone widths. A run-together key prefix and history line were fixed as a result. No finish-review subagent was run.
 
+## Part 6: gateway selection screens
+
+Gateway settings now have one subtab per provider, plus **Gateway selection**. The selection page leads with a comparison table where every missing figure reads **Unknown**, never a placeholder number. Below it sit the routing policy as a plain radio choice, the recommendation tool (a GET form, so its answer lives in the URL), manual overrides, and routing history with the full sentence explaining each decision. The routing history is the signature: every payment's gateway, and why. Status colour stays limited: connected and recommended use the accent soft fill; not routed uses the error outline.
+
+Rendered with dummy data, `sloplint --scope app --render` reported 0 FAIL, 0 REFLEX, and 0 WARN across 32 screens, after capping a long help line. Captures were reviewed at desktop and phone widths, and oversized radio buttons and a truncated override select were fixed as a result. No finish-review subagent was run.
+
 For future screens, use the existing tokens and interaction patterns. Keep invoice creation, checkout, API configuration, and gateway routing for their planned increments. Never present their selection during onboarding as an active integration.
 
 ## Part 3 review
