@@ -4,7 +4,8 @@
 <h1>{{ customer.name }}</h1>
 </div>
 <div class="heading-actions">
-<a class="button quiet" href="{% url 'customer_edit' workspace.pk customer.pk %}">Edit details</a>
+<a class="button quiet" href="{% url 'customer_edit' workspace.pk customer.pk %}">Edit details</a>{% if customer.email %}<form method="post" action="{% url 'portal_invite' workspace.pk customer.pk %}">{% csrf_token %}<button class="button quiet" type="submit">Email portal link</button>
+</form>{% endif %}
 <a class="button quiet" href="{% url 'subscription_create' workspace.pk %}?customer={{ customer.pk }}">New quotation</a>
 <a class="button" href="{% url 'invoice_create' workspace.pk %}?customer={{ customer.pk }}">New invoice</a>
 </div>

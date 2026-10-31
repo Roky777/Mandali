@@ -6,6 +6,8 @@ from django.utils import timezone
 from core.models import Activity
 from .signals import billing_event
 from .models import (
+    CreditNote,
+    Refund,
     ZERO,
     Discount,
     Invoice,
@@ -27,17 +29,18 @@ def money(value):
     return Decimal(value).quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def log(workspace, user, action, detail=""):
+def log(workspace, user, action, detail="", actor_label=""):
     Activity.objects.create(
         workspace=workspace,
         actor=user,
-        is_system=user is None,
+        is_system=user is None and not actor_label,
+        actor_label=actor_label,
         action=action,
         detail=detail[:220],
     )
 
 
-def emit(invoice, event, payment=None):
+def emit(invoice, event, payment=None, **documents):
     invoice.refresh_from_db()
     billing_event.send(
         sender=Invoice,
@@ -45,7 +48,12 @@ def emit(invoice, event, payment=None):
         event=event,
         invoice=invoice,
         payment=payment,
+        **documents,
     )
+
+
+# What is still owed: total - credited - (amount_paid - refunded).
+OWED = F("total") - F("credited") - F("amount_paid") + F("refunded")
 
 
 def next_number(workspace, kind, prefix):
@@ -274,7 +282,7 @@ def transition_problem(subscription, action, today):
 
 
 @transaction.atomic
-def transition(subscription, action, user):
+def transition(subscription, action, user, actor_label=""):
     if action not in TRANSITIONS:
         raise BillingError("Unknown subscription action.")
     sources, target, label = TRANSITIONS[action]
@@ -287,7 +295,7 @@ def transition(subscription, action, user):
         pk=subscription.pk, status=subscription.status
     ).update(status=target, updated_at=timezone.now()):
         raise BillingError("The subscription changed. Reload and try again.")
-    log(subscription.workspace, user, label, subscription.number)
+    log(subscription.workspace, user, label, subscription.number, actor_label)
 
 
 @transaction.atomic
@@ -371,14 +379,14 @@ def issue_invoice(invoice, user):
 @transaction.atomic
 def cancel_invoice(invoice, user, reason):
     if not Invoice.objects.filter(
-        pk=invoice.pk, status=Invoice.Status.ISSUED, amount_paid=0
+        pk=invoice.pk, status=Invoice.Status.ISSUED, amount_paid=0, credited=0
     ).update(
         status=Invoice.Status.CANCELLED,
         cancelled_at=timezone.now(),
         cancel_reason=reason,
     ):
         raise BillingError(
-            "Only issued invoices without active payments can be cancelled. Reverse payments first."
+            "Only issued invoices without active payments or credit notes can be cancelled. Reverse payments first."
         )
     if invoice.discount_id and not invoice.is_sandbox:
         # A cancelled invoice returns its discount use.
@@ -398,10 +406,10 @@ def record_payment(invoice, user, amount, method, received_on, reference="", not
         raise BillingError("Enter an amount above zero.")
     # One conditional UPDATE checks and applies the balance, so concurrent
     # payments cannot together exceed the invoice total.
-    if not Invoice.objects.filter(
+    if not Invoice.objects.alias(owed=OWED).filter(
         pk=invoice.pk,
         status=Invoice.Status.ISSUED,
-        amount_paid__lte=F("total") - amount,
+        owed__gte=amount,
     ).update(amount_paid=F("amount_paid") + amount, updated_at=timezone.now()):
         raise BillingError(
             "This payment is more than the outstanding balance, or the invoice is not open for payments."
@@ -416,14 +424,81 @@ def record_payment(invoice, user, amount, method, received_on, reference="", not
         note=note,
         recorded_by=user,
     )
-    Invoice.objects.filter(
-        pk=invoice.pk, status=Invoice.Status.ISSUED, amount_paid=F("total")
-    ).update(status=Invoice.Status.PAID)
+    settle(invoice)
     emit(invoice, "payment.recorded", payment)
     if invoice.status == Invoice.Status.PAID:
         emit(invoice, "invoice.paid", payment)
     log(invoice.workspace, user, "Payment recorded", f"{invoice.number}: ₹{amount}")
     return payment
+
+
+def settle(invoice):
+    """Mark an issued invoice paid once nothing more is owed."""
+    Invoice.objects.alias(owed=OWED).filter(
+        pk=invoice.pk, status=Invoice.Status.ISSUED, owed__lte=0
+    ).update(status=Invoice.Status.PAID)
+
+
+@transaction.atomic
+def issue_credit_note(invoice, user, amount, reason):
+    amount = money(amount)
+    if amount <= 0:
+        raise BillingError("Enter a credit above zero.")
+    if invoice.is_sandbox:
+        raise BillingError("Sandbox invoices are refunded in the gateway's test dashboard, not with credit notes.")
+    if not Invoice.objects.filter(
+        pk=invoice.pk,
+        status__in=[Invoice.Status.ISSUED, Invoice.Status.PAID],
+        credited__lte=F("total") - amount,
+    ).update(credited=F("credited") + amount, updated_at=timezone.now()):
+        raise BillingError("The credit is more than the invoice has left to credit, or the invoice is not issued.")
+    invoice.refresh_from_db()
+    tax = money(amount * invoice.tax_total / invoice.total) if invoice.total else ZERO
+    note = CreditNote.objects.create(
+        workspace=invoice.workspace,
+        invoice=invoice,
+        number=next_number(invoice.workspace, "credit_note", "CN"),
+        amount=amount,
+        taxable_amount=amount - tax,
+        tax_amount=tax,
+        reason=reason,
+        created_by=user,
+    )
+    settle(invoice)
+    emit(invoice, "invoice.credited", credit_note=note)
+    log(invoice.workspace, user, "Credit note issued", f"{note.number} on {invoice.number}: ₹{amount}, {reason}")
+    return note
+
+
+@transaction.atomic
+def record_refund(invoice, user, amount, method, refunded_on, reference="", note=""):
+    """Record money returned outside Mandali, up to the refund due."""
+    amount = money(amount)
+    if amount <= 0:
+        raise BillingError("Enter a refund above zero.")
+    if method in Payment.GATEWAY_METHODS or invoice.is_sandbox:
+        raise BillingError("Gateway payments are refunded in the gateway's dashboard and are not recorded here.")
+    # A refund returns money received beyond what is owed, so a credit
+    # note must come first. One conditional UPDATE enforces the limit.
+    if not Invoice.objects.alias(owed=OWED).filter(
+        pk=invoice.pk,
+        status=Invoice.Status.PAID,
+        owed__lte=-amount,
+    ).update(refunded=F("refunded") + amount, updated_at=timezone.now()):
+        raise BillingError("A refund can only return money received beyond what is owed. Issue a credit note first.")
+    refund = Refund.objects.create(
+        workspace=invoice.workspace,
+        invoice=invoice,
+        amount=amount,
+        method=method,
+        refunded_on=refunded_on,
+        reference=reference,
+        note=note,
+        recorded_by=user,
+    )
+    emit(invoice, "refund.recorded", refund=refund)
+    log(invoice.workspace, user, "Refund recorded", f"{invoice.number}: ₹{amount}")
+    return refund
 
 
 def duplicate_reference(payment):
@@ -451,6 +526,11 @@ def reverse_payment(payment, user, reason):
         reversed_at=timezone.now(), reversed_by=user, reversal_reason=reason
     ):
         raise BillingError("This payment was already reversed.")
+    # Refunds already sent cannot be undone by reversing the payment they came from.
+    if not Invoice.objects.filter(
+        pk=payment.invoice_id, amount_paid__gte=F("refunded") + payment.amount
+    ).exists():
+        raise BillingError("Part of this payment was already refunded, so it cannot be reversed.")
     Invoice.objects.filter(pk=payment.invoice_id).update(
         amount_paid=F("amount_paid") - payment.amount,
         status=Case(
@@ -473,17 +553,13 @@ def billing_summary(workspace, today):
     open_invoices = Invoice.objects.filter(
         workspace=workspace, status=Invoice.Status.ISSUED, is_sandbox=False
     )
-    totals = open_invoices.aggregate(
-        total=Sum("total", default=ZERO), paid=Sum("amount_paid", default=ZERO)
-    )
+    totals = open_invoices.aggregate(owed=Sum(OWED, default=ZERO))
     overdue = open_invoices.filter(due_date__lt=today).aggregate(
-        count=Count("id"),
-        total=Sum("total", default=ZERO),
-        paid=Sum("amount_paid", default=ZERO),
+        count=Count("id"), owed=Sum(OWED, default=ZERO)
     )
     return {
-        "outstanding": totals["total"] - totals["paid"],
+        "outstanding": totals["owed"],
         "open_count": open_invoices.count(),
         "overdue_count": overdue["count"],
-        "overdue": overdue["total"] - overdue["paid"],
+        "overdue": overdue["owed"],
     }

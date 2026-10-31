@@ -10,6 +10,10 @@
 !checkout/**
 !integrations/
 !integrations/**
+!portal/
+!portal/**
+!reports/
+!reports/**
 !templates/
 !templates/**
 !static/

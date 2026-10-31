@@ -10,7 +10,7 @@ There are two business audiences: those with a website or application, and those
 
 Terminology: a **business** is a merchant using Mandali; a **customer** buys from that business. Every business owns an isolated workspace. Business administrators, staff, and end customers have different permissions. Platform administration must be separate from merchant administration.
 
-This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 3 is implemented with Razorpay Test only; see [checkout setup](CHECKOUT.md). Part 4 is implemented; see [API integration](INTEGRATIONS.md). Part 6 is implemented in sandbox with Cashfree as the second gateway; see [gateway routing](GATEWAY_ROUTING.md). Parts 5, 7, and 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
+This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 3 is implemented with Razorpay Test only; see [checkout setup](CHECKOUT.md). Part 4 is implemented; see [API integration](INTEGRATIONS.md). Part 6 is implemented in sandbox with Cashfree as the second gateway; see [gateway routing](GATEWAY_ROUTING.md). Part 7 is implemented; see [portal and reports](PORTAL_AND_REPORTS.md). Parts 5 and 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
 
 ## Three ways to use the same billing system
 
@@ -40,7 +40,7 @@ A reusable plan checkout link creates a new checkout session for each customer. 
 
 **Reviewable result:** Staff can create a customer, prepare a quotation, issue an INR invoice, record a partial offline payment, and see the correct remaining balance. Totals are calculated on the server. Discount eligibility, expiry, and usage limits are enforced.
 
-**Status:** Implemented. Corrections use cancellation with a reason; credit notes remain in Part 7. Tax handling applies one configured rate per line and does not claim GST invoice compliance. Printable invoices use the browser's print-to-PDF.
+**Status:** Implemented. Corrections use cancellation with a reason, or credit notes and refunds from Part 7. Tax handling applies one configured rate per line and does not claim GST invoice compliance. Printable invoices use the browser's print-to-PDF.
 
 **Boundary:** Plan definitions and manually managed subscriptions exist; recurring scheduling comes in Part 5. Issued invoice amounts are preserved; corrections use a documented cancellation or credit-note workflow rather than silent edits.
 
@@ -87,6 +87,8 @@ A reusable plan checkout link creates a new checkout session for each customer. 
 **Build:** Customer access to their own invoices, receipts, and subscription actions; business dashboards for collections, outstanding balances, overdue invoices, and active subscriptions; filters and exports; refund and credit-note workflows; and clear activity history. Separate invoice totals, payment receipts, refunds, and recurring revenue metrics so reports have explicit meanings.
 
 **Reviewable result:** A business can follow a payment from source event to invoice, receipt, and report. A customer sees only their own records. Partial payments and refunds reconcile correctly. Manual tasks and failed automation are visible for staff action.
+
+**Status:** Implemented. Refunds are recorded for payments collected outside Mandali; gateway refund APIs arrive with live collection. The portal signs customers in by single-use email links.
 
 ### Part 8: Security audit, reliability, and controlled release
 

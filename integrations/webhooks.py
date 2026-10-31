@@ -8,7 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 from .models import WebhookDelivery, WebhookEndpoint
 from .outbound import OutboundError, request
-from .serializers import invoice_data, payment_data
+from .serializers import credit_note_data, invoice_data, payment_data, refund_data
 
 # Minutes to wait after each failed attempt; the last failure gives up.
 BACKOFF = [1, 5, 30, 120, 360, 720, 1440]
@@ -17,8 +17,10 @@ EVENTS = [
     "invoice.issued",
     "invoice.paid",
     "invoice.cancelled",
+    "invoice.credited",
     "payment.recorded",
     "payment.reversed",
+    "refund.recorded",
 ]
 
 
@@ -50,13 +52,17 @@ def queue(workspace, event, data):
     return deliveries
 
 
-def on_billing_event(sender, workspace, event, invoice, payment=None, **kwargs):
+def on_billing_event(sender, workspace, event, invoice, payment=None, credit_note=None, refund=None, **kwargs):
     # Sandbox checkout must not trigger fulfillment on a merchant's real website.
     if invoice.is_sandbox:
         return
     data = {"invoice": invoice_data(invoice)}
     if payment:
         data["payment"] = payment_data(payment)
+    if credit_note:
+        data["credit_note"] = credit_note_data(credit_note)
+    if refund:
+        data["refund"] = refund_data(refund)
     queue(workspace, event, data)
 
 

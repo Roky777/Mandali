@@ -55,7 +55,10 @@ def invoice_data(invoice):
         "tax_total": money(invoice.tax_total),
         "total": money(invoice.total),
         "amount_paid": money(invoice.amount_paid),
+        "credited": money(invoice.credited),
+        "refunded": money(invoice.refunded),
         "balance": money(invoice.balance),
+        "refund_due": money(invoice.refund_due),
     }
 
 
@@ -86,3 +89,24 @@ def subscription_data(subscription):
         "total_per_period": money(subscription.total),
         "lines": [line_data(l) for l in subscription.lines.all()],
     }
+
+
+def credit_note_data(note):
+    return {
+        "number": note.number,
+        "amount": money(note.amount),
+        "taxable_amount": money(note.taxable_amount),
+        "tax_amount": money(note.tax_amount),
+        "reason": note.reason,
+    }
+
+
+def refund_data(refund):
+    return {
+        "id": refund.pk,
+        "amount": money(refund.amount),
+        "method": refund.method,
+        "refunded_on": day(refund.refunded_on),
+        "reference": refund.reference,
+    }
+

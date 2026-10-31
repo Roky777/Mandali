@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     "billing",
     "checkout",
     "integrations",
+    "portal",
+    "reports",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

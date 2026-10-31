@@ -1,0 +1,38 @@
+{% load billing %}<article class="invoice-sheet">
+<header class="sheet-head">
+<div>
+<h1>Payment receipt</h1>{% if payment.reversed_at %}<p class="field-error">This payment was reversed on {{ payment.reversed_at|date:'d M Y' }}. It no longer counts towards the invoice.</p>{% endif %}</div>
+<dl class="sheet-dates">
+<div>
+<dt>Receipt</dt>
+<dd>{{ invoice.number }}-R{{ payment.pk }}</dd>
+</div>
+<div>
+<dt>Received</dt>
+<dd>{{ payment.received_on|date:'d M Y' }}</dd>
+</div>
+</dl>
+</header>
+{% include 'billing/document_parties.html' with party_label='Received from' %}
+<dl class="sheet-totals">
+<div>
+<dt>For invoice</dt>
+<dd>{{ invoice.number }}</dd>
+</div>
+<div>
+<dt>Method</dt>
+<dd>{{ payment.get_method_display }}</dd>
+</div>{% if payment.reference %}<div>
+<dt>Reference</dt>
+<dd>{{ payment.reference }}</dd>
+</div>{% endif %}<div class="ledger-total">
+<dt>Amount received (INR)</dt>
+<dd>{{ payment.amount|inr }}</dd>
+</div>
+<div>
+<dt>Invoice balance now</dt>
+<dd>{{ invoice.balance|inr }}</dd>
+</div>
+</dl>
+<p class="muted sheet-foot">{% if payment.is_gateway %}Verified with {{ payment.get_method_display }}. No real money moved.{% else %}Recorded by the business for a payment collected outside Mandali.{% endif %}</p>
+</article>

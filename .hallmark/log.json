@@ -4,6 +4,30 @@
     "theme": "dose",
     "shape": "app screen",
     "axes": "light/system-sans/blue",
+    "nav": "top bar, workspace tabs, report subtabs; public shell for the portal",
+    "footer": "quiet colophon",
+    "imagery": "none; actual app screens",
+    "signature": "reports where every figure states what it counts",
+    "sections": [
+      "credit notes and refunds",
+      "receipts",
+      "customer portal",
+      "report summary",
+      "needs attention",
+      "activity"
+    ],
+    "waived": [
+      "49b",
+      "72"
+    ],
+    "prompt": "Mandali Part 7, portal and reporting in the Part 1 blue and white system",
+    "review": "sloplint --scope app --render 0 FAIL 0 WARN on 43 screens, 3 waived; manual capture review"
+  },
+  {
+    "scope": "app",
+    "theme": "dose",
+    "shape": "app screen",
+    "axes": "light/system-sans/blue",
     "nav": "top bar, workspace tabs, gateway subtabs",
     "footer": "quiet colophon",
     "imagery": "none; actual app screens",

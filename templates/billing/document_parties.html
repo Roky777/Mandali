@@ -1,0 +1,10 @@
+<div class="sheet-parties">
+<section>
+<h2>From</h2>
+<p><strong>{{ invoice.business_name }}</strong><br>{{ invoice.business_address|linebreaksbr }}<br>{{ invoice.business_email }}{% if invoice.business_gstin %}<br>GSTIN {{ invoice.business_gstin }}{% endif %}</p>
+</section>
+<section>
+<h2>{{ party_label|default:'Bill to' }}</h2>
+<p><strong>{{ invoice.customer_name }}</strong>{% if invoice.customer_address %}<br>{{ invoice.customer_address|linebreaksbr }}{% endif %}{% if invoice.customer_email %}<br>{{ invoice.customer_email }}{% endif %}{% if invoice.customer_gstin %}<br>GSTIN {{ invoice.customer_gstin }}{% endif %}</p>
+</section>
+</div>
