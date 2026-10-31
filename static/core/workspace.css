@@ -1,28 +1,28 @@
-/* Hallmark · shape: app screen · genre: modern-minimal · theme: Coral (deal 1/3, seed mandali-india-first-subscription-billing-2de6·18ef95d0·2026-10-31·r0) · redesign: palette
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Ink (by request) · redesign: palette
  * nav: grouped workspace sidebar and native mobile menu · footer: product utility line
  * signature: collections chart beside the overdue invoice queue · states: empty, error, full, submitting
- * axes: light/grotesk-sans/warm · posture: restrained · data: actual records; demo captures use sample data · v2.0.0 */
+ * axes: light/grotesk-sans/neutral · posture: restrained · data: actual records; demo captures use sample data · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: H, separated billing work from settings and made the collection queue lead */
 :root {
-  --color-shell: oklch(94.3% 0.008 64);
-  --color-surface: oklch(98.8% 0.0045 80);
-  --color-hover: oklch(94.5% 0.007 55);
-  --color-chart: oklch(82% 0.07 32);
-  --color-chart-current: oklch(54% 0.165 29);
-  --color-rule-soft: oklch(91.5% 0.009 55);
-  --color-control-border: oklch(58% 0.013 45);
-  --color-ink: oklch(21% 0.012 38);
-  --color-ink-2: oklch(29% 0.013 40);
-  --color-muted: oklch(47% 0.013 45);
-  --color-rule: oklch(87% 0.009 55);
-  --color-accent: oklch(52% 0.165 29);
-  --color-accent-deep: oklch(45% 0.15 29);
-  --color-accent-soft: oklch(94% 0.03 35);
-  --color-accent-ink: oklch(99% 0.003 80);
-  --color-focus: oklch(54% 0.17 30);
-  --color-paper: oklch(97% 0.006 55);
-  --color-paper-2: oklch(98.8% 0.0045 80);
-  --font-body: "General Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --color-shell: oklch(97% 0.004 100);
+  --color-surface: oklch(99.5% 0.003 100);
+  --color-hover: oklch(95.5% 0.004 100);
+  --color-chart: oklch(86% 0.06 190);
+  --color-chart-current: oklch(50% 0.095 188);
+  --color-rule-soft: oklch(93.5% 0.003 100);
+  --color-control-border: oklch(62% 0 0);
+  --color-ink: oklch(16% 0 0);
+  --color-ink-2: oklch(28% 0 0);
+  --color-muted: oklch(44% 0 0);
+  --color-rule: oklch(89% 0.004 100);
+  --color-accent: oklch(16% 0 0);
+  --color-accent-deep: oklch(28% 0 0);
+  --color-accent-soft: oklch(94% 0.006 100);
+  --color-accent-ink: oklch(99.5% 0.003 100);
+  --color-focus: oklch(50% 0.095 188);
+  --color-paper: oklch(99.5% 0.003 100);
+  --color-paper-2: oklch(97% 0.004 100);
+  --font-body: "Epilogue", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-display: var(--font-body);
   --text-display: 2rem;
   --text-section: 1.2rem;
@@ -36,6 +36,7 @@
   --radius-card: 10px;
   --radius-input: 7px;
   --shadow-card: none;
+  --color-in: oklch(50% 0.095 188); --color-in-soft: oklch(93% 0.05 190); --color-in-ink: oklch(27% 0.045 190);
 }
 body { background: var(--color-paper); font-family: var(--font-body); }
 .workspace-shell { padding-left: 224px; }

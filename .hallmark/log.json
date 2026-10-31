@@ -1,6 +1,22 @@
 [
   {
     "scope": "app",
+    "theme": "ink",
+    "shape": "app screen",
+    "axes": "light/grotesk-sans/neutral",
+    "nav": "existing workspace sidebar",
+    "footer": "product utility line",
+    "imagery": "none; actual app screens",
+    "signature": "collections chart beside the overdue queue",
+    "sections": [
+      "palette only"
+    ],
+    "waived": [],
+    "prompt": "Mandali retheme by request: user picked from the Hallmark catalog after disliking Coral",
+    "review": "Ink by request: hueless black for actions, teal reserved for money in (paid, active, current collections)"
+  },
+  {
+    "scope": "app",
     "theme": "coral",
     "shape": "app screen",
     "axes": "light/grotesk-sans/warm",
