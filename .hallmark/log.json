@@ -1,9 +1,9 @@
 [
   {
     "scope": "app",
-    "theme": "ink",
+    "theme": "garden",
     "shape": "app screen",
-    "axes": "light/grotesk-sans/neutral",
+    "axes": "light/serif-heads/warm green",
     "nav": "existing workspace sidebar",
     "footer": "product utility line",
     "imagery": "none; actual app screens",
@@ -12,8 +12,8 @@
       "palette only"
     ],
     "waived": [],
-    "prompt": "Mandali retheme by request: user picked from the Hallmark catalog after disliking Coral",
-    "review": "Ink by request: hueless black for actions, teal reserved for money in (paid, active, current collections)"
+    "prompt": "Mandali retheme by request: user wanted real colour after Coral and Ink",
+    "review": "Garden by request: oat paper, deep green ink, Vollkorn heads falling back to Georgia, leaf green for actions and money in, clay tint for pending states"
   },
   {
     "scope": "app",
