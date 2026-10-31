@@ -283,6 +283,16 @@ def transition_problem(subscription, action, today):
 
 @transaction.atomic
 def transition(subscription, action, user, actor_label=""):
+    from recurring.models import Schedule
+    from recurring.services import lock_subscription, on_transition
+    from checkout.services import lock_workspace
+
+    lock_workspace(subscription.workspace_id)
+    subscription = lock_subscription(subscription.pk)
+    if Schedule.objects.filter(subscription=subscription, mode="automatic").exists():
+        raise BillingError(
+            "Use Automation to manage this provider-owned subscription. A local status change cannot stop a gateway charge."
+        )
     if action not in TRANSITIONS:
         raise BillingError("Unknown subscription action.")
     sources, target, label = TRANSITIONS[action]
@@ -296,10 +306,17 @@ def transition(subscription, action, user, actor_label=""):
     ).update(status=target, updated_at=timezone.now()):
         raise BillingError("The subscription changed. Reload and try again.")
     log(subscription.workspace, user, label, subscription.number, actor_label)
+    on_transition(subscription, action)
 
 
 @transaction.atomic
 def invoice_from_subscription(subscription, user):
+    from recurring.models import Schedule
+
+    if Schedule.objects.filter(subscription=subscription).exists():
+        raise BillingError(
+            "This subscription has a recurring billing schedule. Use Automation to avoid duplicate cycle invoices."
+        )
     if subscription.status not in [S.CONFIRMED, S.ACTIVE]:
         raise BillingError("Only confirmed or active subscriptions can be invoiced.")
     invoice = Invoice.objects.create(
@@ -378,6 +395,12 @@ def issue_invoice(invoice, user):
 
 @transaction.atomic
 def cancel_invoice(invoice, user, reason):
+    from recurring.models import Cycle
+
+    if Cycle.objects.filter(invoice=invoice, schedule__mode="automatic").exists():
+        raise BillingError(
+            "A local cancellation cannot cancel provider collection. Manage the mandate under Automation."
+        )
     if not Invoice.objects.filter(
         pk=invoice.pk, status=Invoice.Status.ISSUED, amount_paid=0, credited=0
     ).update(
@@ -399,6 +422,13 @@ def cancel_invoice(invoice, user, reason):
 
 @transaction.atomic
 def record_payment(invoice, user, amount, method, received_on, reference="", note=""):
+    if method != Payment.Method.RAZORPAY_TEST:
+        from recurring.models import Cycle
+
+        if Cycle.objects.filter(invoice=invoice, schedule__mode="automatic").exists():
+            raise BillingError(
+                "The provider owns collection for this invoice. Reconcile the mandate instead of starting another collection."
+            )
     if method in Payment.GATEWAY_METHODS and not invoice.is_sandbox:
         raise BillingError("Sandbox payments can only settle sandbox invoices.")
     amount = money(amount)

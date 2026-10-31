@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "billing",
     "checkout",
     "integrations",
+    "recurring",
     "portal",
     "reports",
 ]

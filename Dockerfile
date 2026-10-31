@@ -12,6 +12,7 @@ COPY core ./core
 COPY billing ./billing
 COPY checkout ./checkout
 COPY integrations ./integrations
+COPY recurring ./recurring
 COPY portal ./portal
 COPY reports ./reports
 COPY templates ./templates

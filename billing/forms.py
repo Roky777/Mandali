@@ -161,8 +161,8 @@ class PlanForm(ScopedForm):
         widgets = {"available_from": DATE, "available_until": DATE}
         help_texts = {
             "code": "Optional. Your website sends this code to start a subscription on this plan.",
-            "can_renew": "Saved as plan policy. Renewals arrive with recurring billing.",
-            "auto_close": "Saved as plan policy. Automatic closure arrives with recurring billing.",
+            "can_renew": "Controls whether the subscription term can be renewed.",
+            "auto_close": "Invoice automation closes the term after its last due billing boundary.",
         }
 
     def clean(self):

@@ -16,7 +16,7 @@
 <dd>{{ invoice.due_date|date:'d M Y'|default:'Not issued' }}</dd>
 </div>
 </dl>
-</header>
+</header>{% if invoice.billing_cycle %}<p>Billing period: {{ invoice.billing_cycle.starts_on|date:'d M Y' }} to {{ invoice.billing_cycle.ends_before|date:'d M Y' }} (exclusive).</p>{% endif %}
 <div class="sheet-parties">
 <section>
 <h2>From</h2>

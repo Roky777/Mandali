@@ -54,5 +54,6 @@ urlpatterns = [
     path("w/<uuid:workspace_id>/", include("reports.urls")),
     path("", include("portal.urls")),
     path("api/v1/", include("integrations.api_urls")),
+    path("w/<uuid:workspace_id>/", include("recurring.urls")),
     path("join/<str:token>/", views.accept_invite, name="accept_invite"),
 ]

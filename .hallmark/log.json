@@ -28,6 +28,25 @@
     "theme": "dose",
     "shape": "app screen",
     "axes": "light/system-sans/blue",
+    "nav": "existing workspace tabs plus Automation",
+    "footer": "quiet colophon",
+    "imagery": "actual app screenshots with dummy data",
+    "signature": "billing cycle history and verified authorization state",
+    "sections": [
+      "schedule setup",
+      "billing history",
+      "authorization recovery",
+      "notice delivery"
+    ],
+    "waived": [],
+    "prompt": "Mandali Part 5 recurring invoices reminders renewals and authorized collection",
+    "review": "12 desktop/mobile captures; independent finish review ship after five fixes and recapture"
+  },
+  {
+    "scope": "app",
+    "theme": "dose",
+    "shape": "app screen",
+    "axes": "light/system-sans/blue",
     "nav": "top bar, workspace tabs, gateway subtabs",
     "footer": "quiet colophon",
     "imagery": "none; actual app screens",
