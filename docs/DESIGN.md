@@ -26,3 +26,7 @@ Integrations is an administrator-only tab between Catalog and Team, with API key
 Rendered with dummy data, `sloplint --scope app --render` reported 0 FAIL, 0 REFLEX, and 0 WARN across 26 screens, after replacing capitalised sample codes, straight apostrophes, and a wrapping settings link. Captures of the keys, webhook, sync, and preview screens were reviewed at desktop and phone widths. A run-together key prefix and history line were fixed as a result. No finish-review subagent was run.
 
 For future screens, use the existing tokens and interaction patterns. Keep invoice creation, checkout, API configuration, and gateway routing for their planned increments. Never present their selection during onboarding as an active integration.
+
+## Part 3 review
+
+Checkout preserves the existing blue-and-white ledger system. Hallmark rendered the public checkout at 1280, 1440, 1920 and 375px: 0 FAIL, 0 REFLEX, 0 WARN. Ten additional browser captures covered sharing/QR, buyer details, review, prepared payment, and receipt at desktop and mobile widths with no horizontal overflow. The independent finish reviewer found one missing buyer status-recovery control; it was added alongside Pay and the browser flow was recaptured. Payment/browser evidence used local fixtures, not a real provider transaction. Cloudflare security guidance informed focused source checks of tenant scoping, signatures, encrypted credentials, and replay handling; no full security audit or certification is claimed.

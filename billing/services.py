@@ -29,7 +29,11 @@ def money(value):
 
 def log(workspace, user, action, detail=""):
     Activity.objects.create(
-        workspace=workspace, actor=user, action=action, detail=detail[:220]
+        workspace=workspace,
+        actor=user,
+        is_system=user is None,
+        action=action,
+        detail=detail[:220],
     )
 
 
@@ -58,7 +62,11 @@ def describe_item(plan=None, product=None, variant=None):
     if plan:
         return str(plan), plan.price, plan.tax
     if variant:
-        return f"{variant.product.name}: {variant.name}", variant.unit_price, variant.product.tax
+        return (
+            f"{variant.product.name}: {variant.name}",
+            variant.unit_price,
+            variant.product.tax,
+        )
     return product.name, product.sales_price, product.tax
 
 
@@ -168,9 +176,7 @@ def recalculate_subscription(subscription):
 
 def claim_draft(model, pk, status):
     """Lock a still-editable document for this transaction, or fail."""
-    if not model.objects.filter(pk=pk, status=status).update(
-        updated_at=timezone.now()
-    ):
+    if not model.objects.filter(pk=pk, status=status).update(updated_at=timezone.now()):
         raise BillingError("This document can no longer be edited.")
 
 
@@ -223,7 +229,9 @@ def create_subscription(form, user, template=None):
                 l.quantity,
                 subscription=subscription,
             )
-            for l in template.lines.select_related("plan__tax", "product__tax", "variant__product__tax")
+            for l in template.lines.select_related(
+                "plan__tax", "product__tax", "variant__product__tax"
+            )
         )
         recalculate_subscription(subscription)
     log(subscription.workspace, user, "Quotation created", subscription.number)
@@ -326,7 +334,7 @@ def issue_invoice(invoice, user):
         problem = discount_problem(discount, lines, today)
         if problem:
             raise BillingError(problem)
-        if not Discount.objects.filter(
+        if not invoice.is_sandbox and not Discount.objects.filter(
             Q(usage_limit=None) | Q(times_used__lt=F("usage_limit")),
             pk=discount.pk,
             is_active=True,
@@ -338,7 +346,11 @@ def issue_invoice(invoice, user):
     Invoice.objects.filter(pk=invoice.pk, status=Invoice.Status.DRAFT).update(
         **totals,
         status=Invoice.Status.ISSUED,
-        number=next_number(business, "invoice", "INV"),
+        number=next_number(
+            business,
+            "sandbox_invoice" if invoice.is_sandbox else "invoice",
+            "TST" if invoice.is_sandbox else "INV",
+        ),
         issue_date=today,
         due_date=today + timedelta(days=invoice.payment_terms_days),
         issued_at=timezone.now(),
@@ -368,7 +380,7 @@ def cancel_invoice(invoice, user, reason):
         raise BillingError(
             "Only issued invoices without active payments can be cancelled. Reverse payments first."
         )
-    if invoice.discount_id:
+    if invoice.discount_id and not invoice.is_sandbox:
         # A cancelled invoice returns its discount use.
         Discount.objects.filter(pk=invoice.discount_id, times_used__gt=0).update(
             times_used=F("times_used") - 1
@@ -379,6 +391,8 @@ def cancel_invoice(invoice, user, reason):
 
 @transaction.atomic
 def record_payment(invoice, user, amount, method, received_on, reference="", note=""):
+    if method == Payment.Method.RAZORPAY_TEST and not invoice.is_sandbox:
+        raise BillingError("Sandbox payments can only settle sandbox invoices.")
     amount = money(amount)
     if amount <= 0:
         raise BillingError("Enter an amount above zero.")
@@ -429,6 +443,10 @@ def duplicate_reference(payment):
 
 @transaction.atomic
 def reverse_payment(payment, user, reason):
+    if payment.method == Payment.Method.RAZORPAY_TEST:
+        raise BillingError(
+            "Gateway payments require provider reconciliation. Refund workflows are not available yet."
+        )
     if not Payment.objects.filter(pk=payment.pk, reversed_at=None).update(
         reversed_at=timezone.now(), reversed_by=user, reversal_reason=reason
     ):
@@ -452,12 +470,16 @@ def reverse_payment(payment, user, reason):
 
 
 def billing_summary(workspace, today):
-    open_invoices = Invoice.objects.filter(workspace=workspace, status=Invoice.Status.ISSUED)
+    open_invoices = Invoice.objects.filter(
+        workspace=workspace, status=Invoice.Status.ISSUED, is_sandbox=False
+    )
     totals = open_invoices.aggregate(
         total=Sum("total", default=ZERO), paid=Sum("amount_paid", default=ZERO)
     )
     overdue = open_invoices.filter(due_date__lt=today).aggregate(
-        count=Count("id"), total=Sum("total", default=ZERO), paid=Sum("amount_paid", default=ZERO)
+        count=Count("id"),
+        total=Sum("total", default=ZERO),
+        paid=Sum("amount_paid", default=ZERO),
     )
     return {
         "outstanding": totals["total"] - totals["paid"],

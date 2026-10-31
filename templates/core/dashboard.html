@@ -61,7 +61,7 @@
 <ul class="activity-list">{% for event in activities %}<li>
 <div>
 <strong>{{ event.action }}</strong>
-<span>{{ event.actor.first_name|default:'Account removed' }}{% if event.detail %}: {{ event.detail }}{% endif %}</span>
+<span>{% if event.is_system %}Mandali automation{% else %}{{ event.actor.first_name|default:'Account removed' }}{% endif %}{% if event.detail %}: {{ event.detail }}{% endif %}</span>
 </div>
 <time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'d M Y, H:i' }} IST</time>
 </li>{% empty %}<li>No activity yet. Business and team changes will appear here.</li>{% endfor %}</ul>

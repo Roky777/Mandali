@@ -12,13 +12,18 @@ PERCENT = [MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))]
 NOT_NEGATIVE = [MinValueValidator(Decimal("0"))]
 QUANTITY = [MinValueValidator(1), MaxValueValidator(100000)]
 TERMS = [MinValueValidator(0), MaxValueValidator(365)]
-CODE = [RegexValidator(r"^[A-Za-z0-9._-]+$", "Use letters, numbers, dots, dashes, or underscores.")]
+CODE = [
+    RegexValidator(
+        r"^[A-Za-z0-9._-]+$", "Use letters, numbers, dots, dashes, or underscores."
+    )
+]
 
 
 class Source(models.TextChoices):
     MANUAL = "manual", "Manual"
     API = "api", "Website / API"
     PULL = "pull", "Website sync"
+    HOSTED = "hosted", "Hosted checkout"
 
 
 def unique_when_set(field, name):
@@ -153,7 +158,9 @@ class Discount(models.Model):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
     name = models.CharField(max_length=80)
     kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.PERCENT)
-    value = models.DecimalField(**MONEY, validators=[MinValueValidator(Decimal("0.01"))])
+    value = models.DecimalField(
+        **MONEY, validators=[MinValueValidator(Decimal("0.01"))]
+    )
     min_amount = models.DecimalField(
         "Minimum purchase", **MONEY, default=ZERO, validators=NOT_NEGATIVE
     )
@@ -329,6 +336,9 @@ class Invoice(models.Model):
         max_length=10, choices=Source.choices, default=Source.MANUAL, editable=False
     )
     external_id = models.CharField(max_length=80, blank=True, editable=False)
+    is_sandbox = models.BooleanField(
+        "Sandbox invoice (test payments only)", default=False
+    )
     currency = models.CharField(max_length=3, default="INR", editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     subscription = models.ForeignKey(
@@ -414,6 +424,7 @@ class Payment(models.Model):
         CHEQUE = "cheque", "Cheque"
         CARD = "card", "Card terminal"
         OTHER = "other", "Other"
+        RAZORPAY_TEST = "rzp_test", "Razorpay Test (no real money)"
 
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
     invoice = models.ForeignKey(
@@ -425,7 +436,11 @@ class Payment(models.Model):
     reference = models.CharField(max_length=80, blank=True)
     note = models.CharField(max_length=200, blank=True)
     recorded_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        null=True,
+        blank=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     reversed_at = models.DateTimeField(null=True, blank=True)
@@ -443,5 +458,9 @@ class Payment(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=Q(amount__gt=0), name="payment_amount_positive"
-            )
+            ),
+            models.CheckConstraint(
+                condition=Q(method="rzp_test") | Q(recorded_by__isnull=False),
+                name="manual_payment_has_recorder",
+            ),
         ]

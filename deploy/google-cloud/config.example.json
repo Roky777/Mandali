@@ -12,6 +12,7 @@
   "django_secret": "mandali-django-secret:1",
   "app_db_secret": "mandali-app-db-password:1",
   "migration_db_secret": "mandali-migration-db-password:1",
+  "payment_encryption_secret": "mandali-payment-encryption:1",
   "smtp_secret": "mandali-smtp-password:1",
   "email_host": "smtp.your-provider.com",
   "email_port": "587",

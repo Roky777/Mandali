@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY config ./config
 COPY core ./core
 COPY billing ./billing
+COPY checkout ./checkout
 COPY integrations ./integrations
 COPY templates ./templates
 COPY static ./static

@@ -4,6 +4,26 @@
     "theme": "dose",
     "shape": "app screen",
     "axes": "light/system-sans/blue",
+    "nav": "existing workspace tabs; scoped public checkout header",
+    "footer": "quiet colophon",
+    "imagery": "actual app screenshots with dummy data",
+    "signature": "invoice ledger beside buyer details",
+    "sections": [
+      "payment links",
+      "gateway setup",
+      "buyer details",
+      "order preparation",
+      "verified sandbox receipt"
+    ],
+    "waived": [],
+    "prompt": "Mandali Part 3: links QR and one sandbox gateway",
+    "review": "sloplint render clean; independent finish review: missing status recovery fixed; 10 desktop/mobile captures and fixture browser flow passed"
+  },
+  {
+    "scope": "app",
+    "theme": "dose",
+    "shape": "app screen",
+    "axes": "light/system-sans/blue",
     "nav": "top bar, workspace tabs, integration subtabs",
     "footer": "quiet colophon",
     "imagery": "none; actual app screens",

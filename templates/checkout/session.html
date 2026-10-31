@@ -1,0 +1,64 @@
+{% extends 'base_public.html' %}{% load static billing %}{% block title %}{% if attempt.payment_id %}Sandbox receipt{% else %}Review payment{% endif %}{% endblock %}{% block scripts %}{% if gateway_options %}<script src="https://checkout.razorpay.com/v1/checkout.js" defer>
+</script>
+<script src="{% static 'checkout/pay.js' %}" defer>
+</script>{% endif %}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>{% if attempt.payment_id %}Sandbox payment verified{% else %}Review your payment{% endif %}</h1>
+<p>{{ invoice.business_name }}</p>
+</div>{% if attempt.payment_id %}<button class="button quiet" type="button" data-print>Print receipt</button>{% endif %}</div>
+<div class="checkout-grid">
+<section>
+<h2>{% if attempt.payment_id %}Sandbox receipt{% else %}Invoice {{ invoice.number }}{% endif %}</h2>
+<dl class="essentials compact">
+<div>
+<dt>Customer</dt>
+<dd>{{ invoice.customer_name }}<small>{{ invoice.customer_email }}</small>
+</dd>
+</div>
+<div>
+<dt>Invoice</dt>
+<dd>{{ invoice.number }}</dd>
+</div>{% if attempt.payment_id %}<div>
+<dt>Verified test payment</dt>
+<dd>{{ attempt.payment.amount|inr }}<small>{{ attempt.provider_payment_id }}</small>
+<small>{{ attempt.payment.created_at|date:'d M Y, H:i' }} IST</small>
+</dd>
+</div>{% endif %}</dl>
+<ul class="activity-list">{% for line in lines %}<li>
+<div>
+<strong>{{ line.description }}</strong>
+<span>{{ line.quantity }} × {{ line.unit_price|inr }}{% if line.tax_rate %}, {{ line.tax_name }}{% endif %}</span>
+</div>
+<span>{{ line.total|inr }}</span>
+</li>{% endfor %}</ul>{% if invoice.customer_address %}<p class="receipt-address">{{ invoice.customer_address|linebreaksbr }}</p>{% endif %}</section>
+<aside class="ledger checkout-summary">
+<h2>Payment</h2>
+<dl>
+<div>
+<dt>Invoice total</dt>
+<dd>{{ invoice.total|inr }}</dd>
+</div>
+<div>
+<dt>Recorded</dt>
+<dd>{{ invoice.amount_paid|inr }}</dd>
+</div>
+<div class="ledger-total">
+<dt>Remaining</dt>
+<dd>{{ invoice.balance|inr }}</dd>
+</div>
+</dl>{% if attempt.payment_id %}<p>Sandbox capture verified. No real money moved.</p>{% elif gateway_options %}<p>Razorpay Test will collect test payment details. Never enter real payment details here.</p>{{ gateway_options|json_script:'gateway-options' }}<button class="button full" id="pay-button" type="button">Pay {{ attempt.amount_paise|rupees_from_paise }} in sandbox</button>
+<p class="field-help" id="payment-feedback" role="status">
+</p>
+<form id="verify-payment" method="post" action="{% url 'checkout_verify' token %}">{% csrf_token %}<input type="hidden" name="razorpay_payment_id">
+<input type="hidden" name="razorpay_order_id">
+<input type="hidden" name="razorpay_signature">
+</form><form method="post" action="{% url 'checkout_status' token %}">{% csrf_token %}<button class="button quiet" type="submit">Check payment status</button>
+</form>{% elif attempt %}<p>
+<strong>{{ attempt.get_status_display }}</strong>
+</p>
+<p class="field-help">{{ attempt.detail }}</p>{% if attempt.status == 'rejected' and link_active %}<form method="post" action="{% url 'checkout_begin' token %}">{% csrf_token %}<button class="button" type="submit">Prepare test payment again</button>
+</form>{% elif attempt.provider_order_id %}<form method="post" action="{% url 'checkout_status' token %}">{% csrf_token %}<button class="button quiet" type="submit">Check payment status</button>
+</form>{% else %}<p class="field-help">The business needs to reconcile the existing order. Do not start another checkout to retry this payment.</p>{% endif %}{% elif not link_active %}<p>This payment link is no longer available. Contact the business.</p>{% elif invoice.status == 'issued' %}<form method="post" action="{% url 'checkout_begin' token %}">{% csrf_token %}<p class="field-help">Preparing a payment does not debit you.</p>
+<button class="button full" type="submit">Prepare sandbox payment</button>
+</form>{% else %}<p>This invoice no longer accepts a payment.</p>{% endif %}</aside>
+</div>{% endblock %}

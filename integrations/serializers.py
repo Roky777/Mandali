@@ -45,6 +45,7 @@ def invoice_data(invoice):
         "external_id": invoice.external_id or None,
         "status": invoice.status,
         "source": invoice.source_channel,
+        "is_sandbox": invoice.is_sandbox,
         "currency": invoice.currency,
         "customer_id": invoice.customer_id,
         "issue_date": day(invoice.issue_date),

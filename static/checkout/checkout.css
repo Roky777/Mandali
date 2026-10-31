@@ -1,0 +1,15 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: existing Mandali blue and white
+ * signature: scoped invoice ledger beside buyer details · states: empty, error, pending, verified, unavailable · v2.0.0 */
+/* critique: preserve the existing ledger hierarchy; keep test status visible beside the amount. */
+.checkout-grid :is(a, button, input, textarea):focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.checkout-grid button:active:not(:disabled) { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) { .checkout-grid button:active:not(:disabled) { transform: none; } }
+.checkout-grid { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 4fr); gap: var(--space-2xl); }
+.checkout-summary { align-self: start; }
+.checkout-summary > p { margin-block: var(--space-md); }
+.buyer-form { max-width: 38rem; margin-top: var(--space-lg); }
+.receipt-address { margin-top: var(--space-lg); color: var(--color-muted); }
+.checkout-grid .ledger { position: static; }
+@media (max-width: 60rem) { .checkout-grid { gap: var(--space-lg); } }
+@media (max-width: 40rem) { .checkout-grid { grid-template-columns: minmax(0, 1fr); } .checkout-summary { grid-row: 1; } }
+@media print { .topbar, .footer, button, form, .skip { display: none; } .checkout-grid { display: block; } .main { padding: 0; } }

@@ -51,6 +51,9 @@ def queue(workspace, event, data):
 
 
 def on_billing_event(sender, workspace, event, invoice, payment=None, **kwargs):
+    # Sandbox checkout must not trigger fulfillment on a merchant's real website.
+    if invoice.is_sandbox:
+        return
     data = {"invoice": invoice_data(invoice)}
     if payment:
         data["payment"] = payment_data(payment)

@@ -5,3 +5,5 @@ gunicorn==26.2.0
 packaging==26.3
 psycopg[binary]==3.3.6
 whitenoise==6.12.0
+cryptography==50.0.2
+segno==1.6.6

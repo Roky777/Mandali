@@ -277,6 +277,8 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
  .data-table { overflow: visible; }
  a { color: var(--color-ink); text-decoration: none; }
 }
+
+.qr-preview { max-width: 220px; margin-block: var(--space-lg); }
 /* Part 4: website and API integration */
 .code { font-family: var(--font-outlier); font-size: var(--text-sm); overflow-wrap: anywhere; }
 td strong.code { display: inline; }

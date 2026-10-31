@@ -1,0 +1,29 @@
+{% load static %}<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="same-origin">
+<meta name="description" content="Review your invoice and complete a sandbox payment securely through Razorpay Test.">
+<title>{% block title %}Sandbox checkout{% endblock %} | Mandali</title>
+<link rel="icon" href="{% static 'core/favicon.svg' %}">
+<link rel="stylesheet" href="{% static 'core/app.css' %}">
+<link rel="stylesheet" href="{% static 'checkout/checkout.css' %}">
+<script src="{% static 'core/app.js' %}" defer>
+</script>{% block scripts %}{% endblock %}</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+<div class="container topbar-inner">
+<span class="wordmark">
+<span class="mark" aria-hidden="true">m</span>mandali</span>
+<span class="tag">Sandbox checkout</span>
+</div>
+</header>
+<main class="container main" id="main">{% block content %}{% endblock %}</main>
+<footer class="container footer">
+<span>Test environment. No real money moves.</span>
+<span>Powered by Mandali</span>
+</footer>
+</body>
+</html>

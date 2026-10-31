@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% block title %}{{ link.title }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a href="{% url 'checkout_links' workspace.pk %}">Payment links</a>
+<h1>{{ link.title }}</h1>
+<p>Sandbox checkout, valid until {{ link.expires_at|date:'d M Y, H:i' }} IST.</p>
+</div>
+<span class="tag">{% if active %}Available{% else %}Unavailable{% endif %}</span>
+</div>
+<section class="narrow">
+<label for="share-url">Share this link</label>
+<input id="share-url" type="url" readonly value="{{ share_url }}">
+<p class="field-help">Anyone with this link can open its scoped checkout. Share invoice links only with the intended customer.</p>{% if active %}<img class="qr-preview" src="{% url 'checkout_link_qr' workspace.pk link.pk %}" width="220" height="220" alt="QR code opening this sandbox checkout">
+<div class="form-actions">
+<a class="button" href="{% url 'checkout_link_qr' workspace.pk link.pk %}">Download QR code</a>
+<a href="{{ share_url }}" target="_blank" rel="noopener noreferrer">Open checkout</a>
+</div>
+<p>The QR code opens this same page. It is a checkout link, not a native UPI payment QR.</p>
+<form method="post" action="{% url 'checkout_link_revoke' workspace.pk link.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Revoke this link? New checkout starts will stop immediately.">Revoke link</button>
+</form>{% else %}<p>This link no longer accepts new checkout starts.</p>{% endif %}{% if link.plan_id %}<p>Plan checkout collects an initial payment only. Automatic renewals are not enabled.</p>{% endif %}</section>{% endblock %}

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "core",
     "billing",
+    "checkout",
     "integrations",
 ]
 MIDDLEWARE = [
@@ -138,6 +139,9 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
 EMAIL_TIMEOUT = 10
+
+# First key encrypts new values; retain old keys to decrypt pending orders/links.
+PAYMENT_ENCRYPTION_KEYS = os.getenv("PAYMENT_ENCRYPTION_KEYS", "")
 # Development only: lets integrations reach a sample website on localhost.
 MANDALI_ALLOW_LOCAL_INTEGRATIONS = (
     DEBUG and os.getenv("MANDALI_ALLOW_LOCAL_INTEGRATIONS", "0") == "1"
