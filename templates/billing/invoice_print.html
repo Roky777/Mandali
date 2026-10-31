@@ -36,7 +36,8 @@
 <dt>Discount{% if invoice.discount_label %}, {{ invoice.discount_label }}{% endif %}</dt>
 <dd>-{{ invoice.discount_total|inr }}</dd>
 </div>{% endif %}<div>
-{% gst_split invoice as gst %}{% if gst.igst is not None %}<dt>IGST</dt>
+{% gst_split invoice as gst %}{% if not invoice.tax_total %}<dt>Tax</dt>
+<dd>{{ invoice.tax_total|inr }}</dd>{% elif gst.igst is not None %}<dt>IGST</dt>
 <dd>{{ gst.igst|inr }}</dd>{% else %}<dt>CGST</dt>
 <dd>{{ gst.cgst|inr }}</dd>
 </div>

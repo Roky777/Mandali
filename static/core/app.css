@@ -330,3 +330,6 @@ section > h2 + .stat-row { margin-top: var(--space-md); }
 .upi-box img { background: var(--color-paper); border: 1px solid var(--color-rule); border-radius: var(--radius-input); padding: var(--space-xs); }
 .due-today { margin-bottom: var(--space-xl); }
 
+/* Coral pass: one-line text actions; the balance ledger reads as the signature panel. */
+.text-button { white-space: nowrap; }
+.ledger { border-top: 3px solid var(--color-accent); }
