@@ -49,5 +49,6 @@ urlpatterns = [
         name="remove_staff",
     ),
     path("w/<uuid:workspace_id>/", include("billing.urls")),
+    path("", include("checkout.urls")),
     path("join/<str:token>/", views.accept_invite, name="accept_invite"),
 ]

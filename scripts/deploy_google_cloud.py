@@ -42,7 +42,14 @@ def validate(config):
         raise ValueError("Missing configuration: " + ", ".join(missing))
     if not re.fullmatch(r"[a-z][a-z0-9-]{4,61}[a-z0-9]", config["project_id"]):
         raise ValueError("Invalid Google Cloud project ID.")
-    for key in ["django_secret", "app_db_secret", "migration_db_secret", "smtp_secret"]:
+    for key in [
+        "django_secret",
+        "app_db_secret",
+        "migration_db_secret",
+        "smtp_secret",
+    ] + (
+        ["payment_encryption_secret"] if config.get("payment_encryption_secret") else []
+    ):
         if not re.fullmatch(r"[A-Za-z0-9_-]+:[1-9][0-9]*", config[key]):
             raise ValueError(
                 f"{key} must reference a secret and a numeric version, for example secret-name:1."
@@ -128,6 +135,8 @@ def secret_bindings(config, migration=False):
     }
     if not migration:
         values["EMAIL_HOST_PASSWORD"] = config["smtp_secret"]
+    if not migration and config.get("payment_encryption_secret"):
+        values["PAYMENT_ENCRYPTION_KEYS"] = config["payment_encryption_secret"]
     return ",".join(f"{key}={value}" for key, value in values.items())
 
 

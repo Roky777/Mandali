@@ -1,7 +1,7 @@
 {% extends 'base.html' %}{% load billing %}{% block title %}Invoices{% endblock %}{% block content %}<div class="page-heading">
 <div>
 <h1>Invoices</h1>
-<p>One-time and subscription invoices in INR, with payments collected outside Mandali.</p>
+<p>One-time and subscription invoices in INR, with manual payments and sandbox gateway checkout. Financial summaries exclude sandbox invoices.</p>
 </div>
 <a class="button" href="{% url 'invoice_create' workspace.pk %}">New invoice</a>
 </div>
@@ -32,7 +32,7 @@
 </tr>
 </thead>
 <tbody>{% for invoice in page %}<tr>
-<td><a class="doc-number" href="{% url 'invoice_detail' workspace.pk invoice.pk %}"><strong>{{ invoice.label }}</strong></a></td>
+<td><a class="doc-number" href="{% url 'invoice_detail' workspace.pk invoice.pk %}"><strong>{{ invoice.label }}</strong>{% if invoice.is_sandbox %} <span class="tag">Sandbox</span>{% endif %}</a></td>
 <td data-label="Customer">{{ invoice.customer.name }}</td>
 <td data-label="Due">{{ invoice.due_date|date:'d M Y'|default:'Set on issue' }}</td>
 <td class="num" data-label="Total">{{ invoice.total|inr }}</td>

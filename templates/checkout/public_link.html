@@ -1,0 +1,51 @@
+{% extends 'base_public.html' %}{% load billing %}{% block title %}{{ link.title }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>{{ link.title }}</h1>
+<p>{{ link.workspace.legal_name }}</p>
+</div>
+</div>
+<div class="checkout-grid">
+<section>{% if settled %}<h2>This invoice is settled</h2>
+<p>No additional payment is needed.</p>{% elif quote.invoice %}<h2>Review your invoice</h2>
+<dl class="essentials compact">
+<div>
+<dt>Invoice</dt>
+<dd>{{ quote.invoice.number }}</dd>
+</div>
+<div>
+<dt>Bill to</dt>
+<dd>{{ quote.invoice.customer_name }}</dd>
+</div>
+<div>
+<dt>Outstanding</dt>
+<dd>{{ quote.total|inr }}</dd>
+</div>
+</dl>
+<form method="post">{% csrf_token %}{{ form.nonce }}{{ form.nonce.errors }}{% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}<button class="button" type="submit">Review sandbox payment</button>
+</form>{% else %}<h2>Your details</h2>
+<p class="muted">These details will appear on your test invoice.</p>
+<form method="post" class="buyer-form">{% csrf_token %}{% include 'core/fields.html' %}<button class="button" type="submit">Review sandbox payment</button>
+</form>{% endif %}</section>
+<aside class="ledger checkout-summary">
+<h2>Order summary</h2>
+<p>{{ quote.description }}</p>{% if not quote.invoice %}<dl>
+<div>
+<dt>Quantity</dt>
+<dd>{{ link.quantity }}</dd>
+</div>
+<div>
+<dt>Subtotal</dt>
+<dd>{{ quote.subtotal|inr }}</dd>
+</div>
+<div>
+<dt>Tax</dt>
+<dd>{{ quote.tax|inr }}</dd>
+</div>
+</dl>{% endif %}<dl>
+<div class="ledger-total">
+<dt>{% if quote.invoice %}Outstanding{% else %}Total{% endif %}</dt>
+<dd>{{ quote.total|inr }}</dd>
+</div>
+</dl>
+<p class="field-help">Sandbox only. No real money moves.</p>{% if link.plan_id %}<p class="field-help">Initial payment only. No automatic renewal or recurring debit is created.</p>{% endif %}</aside>
+</div>{% endblock %}

@@ -174,6 +174,14 @@ class ReleaseTests(SimpleTestCase):
             with self.assertRaises(ValueError):
                 validate(config)
 
+    def test_checkout_encryption_secret_is_pinned_and_runtime_only(self):
+        config = {**self.config(), "payment_encryption_secret": "checkout-key:2"}
+        validate(config)
+        self.assertIn("PAYMENT_ENCRYPTION_KEYS=checkout-key:2", secret_bindings(config))
+        self.assertNotIn("checkout-key", secret_bindings(config, migration=True))
+        with self.assertRaises(ValueError):
+            validate({**config, "payment_encryption_secret": "checkout-key:latest"})
+
     def test_migration_failure_stops_before_web_deployment(self):
         import subprocess
 

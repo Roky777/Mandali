@@ -33,7 +33,9 @@ class ScopedForm(forms.ModelForm):
             if hasattr(queryset.model, "is_active"):
                 # Inactive records stay selectable only where already chosen.
                 current = Q(pk__in=[])
-                if self.instance.pk and isinstance(field, forms.ModelMultipleChoiceField):
+                if self.instance.pk and isinstance(
+                    field, forms.ModelMultipleChoiceField
+                ):
                     current = Q(pk__in=getattr(self.instance, name).all())
                 elif self.instance.pk:
                     current = Q(pk=getattr(self.instance, f"{name}_id"))
@@ -62,7 +64,9 @@ class CustomerForm(ScopedForm):
             .exclude(pk=self.instance.pk)
             .exists()
         ):
-            raise forms.ValidationError("Another customer in this business uses this email.")
+            raise forms.ValidationError(
+                "Another customer in this business uses this email."
+            )
         return email
 
     def clean_gstin(self):
@@ -83,7 +87,15 @@ class TaxForm(ScopedForm):
 class ProductForm(ScopedForm):
     class Meta:
         model = Product
-        fields = ["name", "kind", "sales_price", "cost_price", "tax", "notes", "is_active"]
+        fields = [
+            "name",
+            "kind",
+            "sales_price",
+            "cost_price",
+            "tax",
+            "notes",
+            "is_active",
+        ]
         labels = {
             "name": "Product name",
             "kind": "Type",
@@ -147,7 +159,9 @@ class PlanForm(ScopedForm):
         data = super().clean()
         start, end = data.get("available_from"), data.get("available_until")
         if start and end and end < start:
-            self.add_error("available_until", "Choose a date on or after the start date.")
+            self.add_error(
+                "available_until", "Choose a date on or after the start date."
+            )
         return data
 
 
@@ -203,7 +217,8 @@ class DiscountForm(ScopedForm):
         limit = data.get("usage_limit")
         if limit is not None and limit < self.instance.times_used:
             self.add_error(
-                "usage_limit", f"It has already been used {self.instance.times_used} times."
+                "usage_limit",
+                f"It has already been used {self.instance.times_used} times.",
             )
         return data
 
@@ -222,10 +237,14 @@ class TemplateForm(ScopedForm):
 
 def item_choices(workspace):
     plans = Plan.objects.filter(workspace=workspace, is_active=True)
-    products = Product.objects.filter(workspace=workspace, is_active=True).prefetch_related("variants")
+    products = Product.objects.filter(
+        workspace=workspace, is_active=True
+    ).prefetch_related("variants")
     product_choices = []
     for product in products:
-        product_choices.append((f"product:{product.pk}", f"{product.name}, {inr(product.sales_price)}"))
+        product_choices.append(
+            (f"product:{product.pk}", f"{product.name}, {inr(product.sales_price)}")
+        )
         for variant in product.variants.all():
             if variant.is_active:
                 product_choices.append(
@@ -243,7 +262,9 @@ def item_choices(workspace):
 
 class LineForm(forms.Form):
     item = forms.ChoiceField(label="Plan or product")
-    quantity = forms.IntegerField(label="Quantity", min_value=1, max_value=100000, initial=1)
+    quantity = forms.IntegerField(
+        label="Quantity", min_value=1, max_value=100000, initial=1
+    )
 
     def __init__(self, *args, workspace, **kwargs):
         super().__init__(*args, **kwargs)
@@ -254,7 +275,9 @@ class LineForm(forms.Form):
         kind, _, pk = self.cleaned_data["item"].partition(":")
         lookups = {
             "plan": Plan.objects.select_related("tax").filter(workspace=self.workspace),
-            "product": Product.objects.select_related("tax").filter(workspace=self.workspace),
+            "product": Product.objects.select_related("tax").filter(
+                workspace=self.workspace
+            ),
             "variant": ProductVariant.objects.select_related("product__tax").filter(
                 product__workspace=self.workspace, product__is_active=True
             ),
@@ -271,7 +294,10 @@ class LineForm(forms.Form):
         plan = (data.get("item") or {}).get("plan")
         quantity = data.get("quantity")
         if plan and quantity is not None and quantity < plan.min_quantity:
-            self.add_error("quantity", f"This plan needs a quantity of at least {plan.min_quantity}.")
+            self.add_error(
+                "quantity",
+                f"This plan needs a quantity of at least {plan.min_quantity}.",
+            )
         if plan and not plan.available_on(timezone.localdate()):
             self.add_error("item", "This plan is outside its availability dates.")
         return data
@@ -331,11 +357,15 @@ class SubscriptionForm(ScopedForm):
 class InvoiceForm(ScopedForm):
     class Meta:
         model = Invoice
-        fields = ["customer", "payment_terms_days", "discount", "notes"]
-        labels = {"discount": "Discount (optional)", "notes": "Notes for the customer (optional)"}
+        fields = ["customer", "payment_terms_days", "discount", "notes", "is_sandbox"]
+        labels = {
+            "discount": "Discount (optional)",
+            "notes": "Notes for the customer (optional)",
+        }
         widgets = {"notes": forms.Textarea(attrs={"rows": 3})}
         help_texts = {
             "payment_terms_days": "The due date is set from the issue date.",
+            "is_sandbox": "Test invoices use TST numbers and are excluded from financial summaries. Required for sandbox checkout.",
             "discount": "Eligibility, dates, and usage limits are checked again when you issue the invoice.",
         }
 
@@ -356,7 +386,14 @@ class PaymentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["method"].choices = [("", "Choose how it was paid"), *Payment.Method.choices]
+        self.fields["method"].choices = [
+            ("", "Choose how it was paid"),
+            *[
+                (value, label)
+                for value, label in Payment.Method.choices
+                if value != Payment.Method.RAZORPAY_TEST
+            ],
+        ]
 
     def clean_amount(self):
         amount = self.cleaned_data["amount"]
@@ -367,7 +404,9 @@ class PaymentForm(forms.ModelForm):
     def clean_received_on(self):
         day = self.cleaned_data["received_on"]
         if day > timezone.localdate():
-            raise forms.ValidationError("A received payment cannot be dated in the future.")
+            raise forms.ValidationError(
+                "A received payment cannot be dated in the future."
+            )
         return day
 
 

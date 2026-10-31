@@ -4,7 +4,7 @@
 <h1>{% if invoice.number %}Invoice {{ invoice.number }}{% else %}Draft invoice{% endif %}</h1>
 <p>{{ invoice.customer_name|default:invoice.customer.name }}{% if invoice.subscription %}, from <a href="{% url 'subscription_detail' workspace.pk invoice.subscription.pk %}">{{ invoice.subscription.number }}</a>{% endif %}</p>
 </div>
-<div class="heading-actions">{% include 'billing/invoice_status.html' %}{% if invoice.status == 'draft' %}<a class="button quiet" href="{% url 'invoice_edit' workspace.pk invoice.pk %}">Edit details</a>{% else %}<a class="button quiet" href="{% url 'invoice_print' workspace.pk invoice.pk %}">Printable invoice</a>{% endif %}</div>
+<div class="heading-actions">{% if invoice.is_sandbox %}<span class="tag">Sandbox</span>{% if invoice.status == 'issued' %}<a class="button quiet" href="{% url 'checkout_link_create' workspace.pk %}?invoice={{ invoice.pk }}">Create payment link</a>{% endif %}{% endif %}{% include 'billing/invoice_status.html' %}{% if invoice.status == 'draft' %}<a class="button quiet" href="{% url 'invoice_edit' workspace.pk invoice.pk %}">Edit details</a>{% else %}<a class="button quiet" href="{% url 'invoice_print' workspace.pk invoice.pk %}">Printable invoice</a>{% endif %}</div>
 </div>
 <div class="doc-grid">
 <div>
@@ -35,12 +35,12 @@
 {% if invoice.status != 'draft' %}<section class="activity">
 <div class="section-heading">
 <h2>Payments</h2>
-<span class="muted">Collected outside Mandali and recorded here</span>
+<span class="muted">Verified gateway and externally collected payments</span>
 </div>{% if payments %}<ul class="activity-list">{% for payment in payments %}<li>
 <div>
 <strong>{% if payment.reversed_at %}<s>{{ payment.amount|inr }}</s> reversed{% else %}{{ payment.amount|inr }}{% endif %}</strong>
 <span>{{ payment.get_method_display }}, received {{ payment.received_on|date:'d M Y' }}{% if payment.reference %}, reference {{ payment.reference }}{% endif %}</span>
-<span>Recorded by {{ payment.recorded_by.first_name|default:payment.recorded_by.email }}{% if payment.note %}: {{ payment.note }}{% endif %}</span>{% if payment.reversed_at %}<span>Reversed {{ payment.reversed_at|date:'d M Y' }}: {{ payment.reversal_reason }}</span>{% endif %}</div>{% if is_admin and not payment.reversed_at %}<form class="reason-form" method="post" action="{% url 'payment_reverse' workspace.pk payment.pk %}">{% csrf_token %}<label for="reverse-{{ payment.pk }}">Reason to reverse</label>
+<span>{% if payment.method == 'rzp_test' %}Verified by Razorpay Test{% else %}Recorded by {{ payment.recorded_by.first_name|default:payment.recorded_by.email }}{% endif %}{% if payment.note %}: {{ payment.note }}{% endif %}</span>{% if payment.reversed_at %}<span>Reversed {{ payment.reversed_at|date:'d M Y' }}: {{ payment.reversal_reason }}</span>{% endif %}</div>{% if is_admin and not payment.reversed_at and payment.method != 'rzp_test' %}<form class="reason-form" method="post" action="{% url 'payment_reverse' workspace.pk payment.pk %}">{% csrf_token %}<label for="reverse-{{ payment.pk }}">Reason to reverse</label>
 <input id="reverse-{{ payment.pk }}" name="reason" maxlength="200" required>
 <button class="text-button" type="submit" data-confirm="Reverse this payment and restore the balance?">Reverse</button>
 </form>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">No payments recorded yet.</p>{% endif %}</section>{% endif %}

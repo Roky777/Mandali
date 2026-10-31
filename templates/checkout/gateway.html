@@ -1,0 +1,24 @@
+{% extends 'base.html' %}{% block title %}Sandbox gateway{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>Sandbox gateway</h1>
+<p>Connect this business to Razorpay Test. Live keys are rejected.</p>
+</div>
+<a href="{% url 'checkout_links' workspace.pk %}">Back to links</a>
+</div>{% if gateway %}<section class="privacy-note">
+<h2>Current connection</h2>
+<p>Key ID: {{ gateway.key_id }}</p>
+<label for="webhook-url">Webhook URL</label>
+<input id="webhook-url" value="{{ webhook_url }}" readonly>
+<p class="field-help">In Razorpay Test, subscribe to payment.captured, payment.authorized, and payment.failed. Use the same webhook secret entered below. Keep old webhook configurations active until their pending orders are reconciled.</p>
+<form method="post" action="{% url 'checkout_gateway_disable' workspace.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Disable new orders? Existing payment evidence remains verifiable.">Disable new orders</button>
+</form>
+</section>{% endif %}<div class="form-layout">
+<section class="form-intro">
+<h2>{% if gateway %}Replace credentials{% else %}Connect Razorpay Test{% endif %}</h2>
+<p>Secrets are encrypted before storage. Replacing credentials creates a new version; previous orders retain their original configuration.</p>
+</section>
+<section class="form-surface">
+<form method="post">{% csrf_token %}{% include 'core/fields.html' %}<button class="button" type="submit">Save test connection</button>
+</form>
+</section>
+</div>{% endblock %}

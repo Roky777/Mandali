@@ -94,6 +94,7 @@ class Invitation(models.Model):
 class Activity(models.Model):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
     actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    is_system = models.BooleanField(default=False)
     action = models.CharField(max_length=80)
     detail = models.CharField(max_length=220, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

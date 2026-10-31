@@ -20,3 +20,8 @@ def inr(value):
             head = head[:-2]
         whole = ",".join([head, *groups, tail]) if head else ",".join([*groups, tail])
     return f"{sign}₹{whole}.{fraction}"
+
+
+@register.filter
+def rupees_from_paise(value):
+    return inr(Decimal(value) / 100)

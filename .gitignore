@@ -10,4 +10,5 @@ staticfiles/
 .hallmark/shots/
 .hallmark/browser/
 .hallmark/salt
+.hallmark/checkout-qa/
 deploy/google-cloud/*.local.json

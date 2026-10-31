@@ -276,3 +276,5 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
  .data-table { overflow: visible; }
  a { color: var(--color-ink); text-decoration: none; }
 }
+
+.qr-preview { max-width: 220px; margin-block: var(--space-lg); }

@@ -5,7 +5,7 @@
 <article class="invoice-sheet">
 <header class="sheet-head">
 <div>
-<h1>{% if invoice.status == 'draft' %}Draft invoice{% else %}Invoice {{ invoice.number }}{% endif %}</h1>{% if invoice.status == 'draft' %}<p class="field-error">Draft. Not valid for payment until issued.</p>{% elif invoice.status == 'cancelled' %}<p class="field-error">Cancelled on {{ invoice.cancelled_at|date:'d M Y' }}. No amount is due.</p>{% endif %}</div>
+{% if invoice.is_sandbox %}<p>Sandbox invoice. No real money moves.</p>{% endif %}<h1>{% if invoice.status == 'draft' %}Draft invoice{% else %}Invoice {{ invoice.number }}{% endif %}</h1>{% if invoice.status == 'draft' %}<p class="field-error">Draft. Not valid for payment until issued.</p>{% elif invoice.status == 'cancelled' %}<p class="field-error">Cancelled on {{ invoice.cancelled_at|date:'d M Y' }}. No amount is due.</p>{% endif %}</div>
 <dl class="sheet-dates">
 <div>
 <dt>Issued</dt>
