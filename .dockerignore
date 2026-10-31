@@ -12,6 +12,10 @@
 !integrations/**
 !recurring/
 !recurring/**
+!portal/
+!portal/**
+!reports/
+!reports/**
 !templates/
 !templates/**
 !static/

@@ -56,12 +56,12 @@
 <section class="activity">
 <div class="section-heading">
 <h2>Workspace activity</h2>
-<span class="muted">Latest changes</span>
+<a href="{% url 'reports_activity' workspace.pk %}">See all activity</a>
 </div>
 <ul class="activity-list">{% for event in activities %}<li>
 <div>
 <strong>{{ event.action }}</strong>
-<span>{% if event.is_system %}Mandali automation{% else %}{{ event.actor.first_name|default:'Account removed' }}{% endif %}{% if event.detail %}: {{ event.detail }}{% endif %}</span>
+<span>{% if event.actor_label %}{{ event.actor_label }}{% elif event.is_system %}Mandali automation{% else %}{{ event.actor.first_name|default:'Account removed' }}{% endif %}{% if event.detail %}: {{ event.detail }}{% endif %}</span>
 </div>
 <time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'d M Y, H:i' }} IST</time>
 </li>{% empty %}<li>No activity yet. Business and team changes will appear here.</li>{% endfor %}</ul>

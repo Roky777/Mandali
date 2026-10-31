@@ -1,0 +1,73 @@
+{% extends 'portal/base.html' %}{% load billing %}{% block portal_title %}Invoice {{ invoice.number }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'portal_home' %}">Your invoices</a>
+<h1>Invoice {{ invoice.number }}</h1>
+<p>{{ invoice.business_name }}</p>
+</div>
+<div class="heading-actions">{% if invoice.is_sandbox %}<span class="tag">Test invoice</span>{% endif %}<button class="button quiet" type="button" data-print>Print</button></div>
+</div>
+<div class="doc-grid">
+<div>
+<dl class="essentials compact">
+<div>
+<dt>Billed to</dt>
+<dd>{{ invoice.customer_name }}<small>{{ invoice.customer_email }}</small>
+</dd>
+</div>
+<div>
+<dt>Dates</dt>
+<dd>Issued {{ invoice.issue_date|date:'d M Y' }}<small>Due {{ invoice.due_date|date:'d M Y' }}</small>
+</dd>
+</div>{% if invoice.status == 'cancelled' %}<div>
+<dt>Cancelled</dt>
+<dd>{{ invoice.cancelled_at|date:'d M Y' }}<small>No amount is due.</small>
+</dd>
+</div>{% endif %}</dl>
+<section class="activity">
+<h2>Lines</h2>
+{% include 'billing/lines.html' with parent=invoice show_discount=invoice.discount_total remove_url='' %}
+</section>
+<section class="activity">
+<h2>Payments and adjustments</h2>{% if payments or credit_notes or refunds %}<ul class="activity-list">{% for payment in payments %}<li>
+<div>
+<strong>{{ payment.amount|inr }} received</strong>
+<span>{{ payment.get_method_display }}, {{ payment.received_on|date:'d M Y' }}</span>
+</div>
+<a href="{% url 'portal_receipt' invoice.pk payment.pk %}">Receipt</a>
+</li>{% endfor %}{% for note in credit_notes %}<li>
+<div>
+<strong>Credit note {{ note.number }}: {{ note.amount|inr }}</strong>
+<span>{{ note.reason }}</span>
+</div>
+<a href="{% url 'portal_credit_note' note.pk %}">View</a>
+</li>{% endfor %}{% for refund in refunds %}<li>
+<div>
+<strong>{{ refund.amount|inr }} refunded to you</strong>
+<span>{{ refund.get_method_display }}, {{ refund.refunded_on|date:'d M Y' }}</span>
+</div>
+</li>{% endfor %}</ul>{% else %}<p class="muted">No payments yet.</p>{% endif %}</section>
+</div>
+<aside class="ledger" aria-label="Balance">
+<h2>Balance</h2>
+<dl>
+<div class="ledger-total">
+<dt>Invoice total</dt>
+<dd>{{ invoice.total|inr }}</dd>
+</div>{% if invoice.credited %}<div>
+<dt>Credit notes</dt>
+<dd>-{{ invoice.credited|inr }}</dd>
+</div>{% endif %}<div>
+<dt>Paid</dt>
+<dd>-{{ invoice.amount_paid|inr }}</dd>
+</div>{% if invoice.refunded %}<div>
+<dt>Refunded to you</dt>
+<dd>{{ invoice.refunded|inr }}</dd>
+</div>{% endif %}{% if invoice.status != 'cancelled' %}<div class="ledger-total">
+<dt>Remaining</dt>
+<dd>{{ invoice.balance|inr }}</dd>
+</div>{% if invoice.refund_due %}<div class="ledger-total refund-due">
+<dt>Due back to you</dt>
+<dd>{{ invoice.refund_due|inr }}</dd>
+</div>{% endif %}{% endif %}</dl>
+{% if pay_url %}<a class="button full" href="{{ pay_url }}">Pay online</a>{% elif invoice.status == 'issued' %}<p class="field-help">To pay, follow the instructions from {{ invoice.business_name }} or ask them for a payment link.</p>{% endif %}</aside>
+</div>{% endblock %}

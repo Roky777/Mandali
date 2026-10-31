@@ -95,6 +95,8 @@ class Activity(models.Model):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
     actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     is_system = models.BooleanField(default=False)
+    # Who acted when it was not a team member, for example "Customer (portal)".
+    actor_label = models.CharField(max_length=40, blank=True)
     action = models.CharField(max_length=80)
     detail = models.CharField(max_length=220, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}Credit note {{ note.number }}{% endblock %}{% block content %}<div class="print-toolbar">
+<a class="back-link" href="{{ back }}">Back</a>
+<button class="button" type="button" data-print>Print or save as PDF</button>
+</div>
+{% include 'billing/credit_note_sheet.html' %}{% endblock %}

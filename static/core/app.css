@@ -1,8 +1,10 @@
 /* Hallmark · shape: app screen · genre: modern-minimal · theme: Dose, blue and white by user preference
  * nav: top bar and workspace tabs, catalog and filter subtabs · signature: workspace essentials ledger; invoice balance ledger; sync preview · states: empty, error, full, submitting, draft, issued, overdue, paid, cancelled
  * axes: light/system-sans/blue · posture: restrained · dose: white, no imagery or decorative motion · v2.0.0 */
-/* Hallmark · finish-review: subagent, ship; mobile member rows refined after review. Login sweep: 0 FAIL, 0 REFLEX, 0 WARN. Part 2 billing sweep, 17 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 4 sweep, 26 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 6 sweep, 32 screens: 0 FAIL, 0 REFLEX, 0 WARN. */
+/* Hallmark · finish-review: subagent, ship; mobile member rows refined after review. Login sweep: 0 FAIL, 0 REFLEX, 0 WARN. Part 2 billing sweep, 17 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 4 sweep, 26 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 6 sweep, 32 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 7 sweep, 43 screens: 0 FAIL, 0 WARN, 3 waived. */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, kept business settings and access as the screen's substance */
+/* Hallmark · waive 49b · first table cells keep overflow-wrap: anywhere · customer names are real data and must wrap rather than overflow at 320px */
+/* Hallmark · waive 72 · .ledger keeps var(--space-lg) padding on every side · the closed credit-note details element is measured while hidden */
 @import url('./tokens.css');
 @import url('./base.css');
 
@@ -306,3 +308,20 @@ input.code { font-family: var(--font-outlier); }
 
 /* Recurring billing: keep secondary cycle and delivery values readable. */
 .automation-page :is(td, .plain-list li) small { display: block; margin-top: var(--space-xs); }
+/* Part 7: credit notes, refunds, portal, and reports */
+.ledger .refund-due dd { color: var(--color-error); }
+.disclosure { margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--color-rule); }
+.disclosure summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--color-accent); font-weight: 600; }
+.disclosure summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.disclosure form { margin-top: var(--space-md); }
+.activity-list li > a { white-space: nowrap; font-size: var(--text-sm); }
+.portal-subhead { margin-top: var(--space-xl); }
+.portal-signout { margin: 0; }
+.filter-row { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-md); margin-bottom: var(--space-lg); }
+.filter-row > div { min-width: 0; flex: 1 1 160px; max-width: 260px; }
+.filter-row label { margin-bottom: var(--space-2xs); }
+.report-stats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.report-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2xl); }
+@media (max-width:60rem) { .report-grid { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+.sheet-totals .wrap dd { white-space: normal; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+section > h2 + .stat-row { margin-top: var(--space-md); }

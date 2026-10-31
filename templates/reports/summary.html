@@ -1,0 +1,132 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}Reports{% endblock %}{% block content %}{% include 'reports/nav.html' %}
+<form class="filter-row" method="get">
+<div>
+<label for="id_period">Period</label>{{ form.period }}</div>
+<div>
+<label for="id_start">From (custom)</label>
+<input type="date" name="start" id="id_start" value="{{ start|date:'Y-m-d' }}">
+</div>
+<div>
+<label for="id_end">To (custom)</label>
+<input type="date" name="end" id="id_end" value="{{ end|date:'Y-m-d' }}">
+</div>
+<button class="button quiet" type="submit">Show</button>
+</form>
+{% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
+<p class="section-note">{{ period_label }}: {{ start|date:'d M Y' }} to {{ end|date:'d M Y' }}. Test invoices and sandbox payments are excluded from every figure.</p>
+<section>
+<h2>In this period</h2>
+<dl class="stat-row report-stats">
+<div>
+<dt>Invoiced</dt>
+<dd>{{ report.invoiced.total|inr }}<small>{{ report.invoiced.count }} invoice{{ report.invoiced.count|pluralize }} issued, including {{ report.invoiced.tax|inr }} tax. Cancelled invoices are not counted.</small>
+</dd>
+</div>
+<div>
+<dt>Credited</dt>
+<dd>{{ report.credited.total|inr }}<small>{{ report.credited.count }} credit note{{ report.credited.count|pluralize }} issued</small>
+</dd>
+</div>
+<div>
+<dt>Collected</dt>
+<dd>{{ report.collected.total|inr }}<small>{{ report.collected.count }} payment{{ report.collected.count|pluralize }} received, reversed payments excluded</small>
+</dd>
+</div>
+<div>
+<dt>Refunded</dt>
+<dd>{{ report.refunded.total|inr }}<small>{{ report.refunded.count }} refund{{ report.refunded.count|pluralize }} paid out</small>
+</dd>
+</div>
+<div>
+<dt>Net collected</dt>
+<dd>{{ report.net_collected|inr }}<small>Collected minus refunded</small>
+</dd>
+</div>{% if report.cancelled.count %}<div>
+<dt>Cancelled</dt>
+<dd>{{ report.cancelled.total|inr }}<small>{{ report.cancelled.count }} invoice{{ report.cancelled.count|pluralize }} issued in this period, then cancelled</small>
+</dd>
+</div>{% endif %}</dl>
+</section>
+<section class="activity">
+<h2>Right now</h2>
+<dl class="stat-row report-stats">
+<div>
+<dt>Outstanding</dt>
+<dd>{{ report.now.outstanding|inr }}<small>Owed on {{ report.now.open_count }} issued invoice{{ report.now.open_count|pluralize }}, after credit notes</small>
+</dd>
+</div>
+<div>
+<dt>Overdue</dt>
+<dd>{{ report.now.overdue|inr }}<small>{{ report.now.overdue_count }} invoice{{ report.now.overdue_count|pluralize }} past the due date</small>
+</dd>
+</div>
+<div>
+<dt>Monthly recurring value</dt>
+<dd>{{ report.recurring.monthly|inr }}<small>{{ report.recurring.active }} active subscription{{ report.recurring.active|pluralize }}{% if report.recurring.paused %}, {{ report.recurring.paused }} paused{% endif %}. A run rate before discounts, not money collected.</small>
+</dd>
+</div>
+</dl>
+</section>
+<div class="report-grid">
+<section class="activity">
+<h2>Overdue by age</h2>
+<div class="data-table">
+<table>
+<caption class="visually-hidden">Overdue by age</caption>
+<thead>
+<tr>
+<th scope="col">Days past due</th>
+<th scope="col" class="num">Invoices</th>
+<th scope="col" class="num">Owed</th>
+</tr>
+</thead>
+<tbody>{% for bucket in report.aging %}<tr>
+<td><strong>{% if bucket.high %}{{ bucket.low }} to {{ bucket.high }}{% else %}More than {{ bucket.low|add:-1 }}{% endif %}</strong></td>
+<td class="num" data-label="Invoices">{{ bucket.count }}</td>
+<td class="num" data-label="Owed">{{ bucket.total|inr }}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+<section class="activity">
+<h2>Collected by method</h2>{% if report.by_method %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Collected by method</caption>
+<thead>
+<tr>
+<th scope="col">Method</th>
+<th scope="col" class="num">Payments</th>
+<th scope="col" class="num">Amount</th>
+</tr>
+</thead>
+<tbody>{% for row in report.by_method %}<tr>
+<td><strong>{{ row.method }}</strong></td>
+<td class="num" data-label="Payments">{{ row.count }}</td>
+<td class="num" data-label="Amount">{{ row.total|inr }}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% else %}<p class="muted">No payments were received in this period.</p>{% endif %}</section>
+</div>
+<section class="activity">
+<h2>Customers with the most outstanding</h2>{% if report.top_customers %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Customers with the most outstanding</caption>
+<thead>
+<tr>
+<th scope="col">Customer</th>
+<th scope="col" class="num">Open invoices</th>
+<th scope="col" class="num">Owed</th>
+</tr>
+</thead>
+<tbody>{% for row in report.top_customers %}<tr>
+<td><a href="{% url 'customer_detail' workspace.pk row.customer_id %}"><strong>{{ row.customer__name }}</strong></a></td>
+<td class="num" data-label="Open invoices">{{ row.count }}</td>
+<td class="num" data-label="Owed">{{ row.owed|inr }}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% else %}<p class="muted">No customer owes anything right now.</p>{% endif %}</section>
+{% if is_admin %}<section class="activity">
+<h2>Export this period</h2>
+<p class="section-note">CSV files for your accountant or spreadsheet. Text that could run as a spreadsheet formula is made safe.</p>
+<div class="heading-actions">{% for kind, label in exports %}<a class="button quiet" href="{% url 'reports_export' workspace.pk kind %}?{{ query }}">{{ label }}</a>{% endfor %}</div>
+</section>{% endif %}{% endblock %}

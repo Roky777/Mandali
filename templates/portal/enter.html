@@ -1,0 +1,6 @@
+{% extends 'portal/base.html' %}{% block portal_title %}Continue to your invoices{% endblock %}{% block content %}<section class="narrow">
+<h1>Continue to your invoices</h1>
+<p>This link signs you in once. Continue on the device you want to use.</p>
+<form method="post">{% csrf_token %}<button class="button" type="submit">Continue</button>
+</form>
+</section>{% endblock %}

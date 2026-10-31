@@ -30,7 +30,7 @@ Eligibility is shown on the draft and checked again at issue against today's dat
 
 ## Corrections and permissions
 
-Issued amounts are never edited. To correct an issued invoice, an administrator cancels it with a reason and staff issue a new one. Cancelled numbers are kept, not reused. An invoice with active payments cannot be cancelled until those payments are reversed. Credit notes and refunds are planned for Part 7.
+Issued amounts are never edited. To correct an issued invoice, an administrator cancels it with a reason and staff issue a new one. Cancelled numbers are kept, not reused. An invoice with active payments cannot be cancelled until those payments are reversed. Credit notes, refunds, and receipts are described in [portal and reports](PORTAL_AND_REPORTS.md).
 
 | Action | Administrator | Staff |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ These controls were designed for and tested on SQLite. Re-verify concurrency on 
 
 ## Not in this increment
 
-Part 3 implements sandbox online payments, links, and QR codes. Part 5 adds opt-in recurring schedules, renewals, automatic closure, email notices, and billing-cycle uniqueness; see [recurring setup](RECURRING.md). Standalone manual drafts are not automatically assigned to billing periods. Customer portal, refunds, credit notes, and exports remain Part 7.
+Part 3 implements sandbox online payments, links, and QR codes. Part 5 adds opt-in recurring schedules, renewals, automatic closure, email notices, and billing-cycle uniqueness; see [recurring setup](RECURRING.md). Standalone manual drafts are not automatically assigned to billing periods. Credit notes, refunds, receipts, the customer portal, and exports are described in [portal and reports](PORTAL_AND_REPORTS.md).
 
 ## Verification
 

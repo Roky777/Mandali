@@ -10,7 +10,7 @@ Everything remains sandbox only. Razorpay key IDs must start with `rzp_test_` an
 2. In the Cashfree Sandbox dashboard, add the webhook URL shown in Mandali (`/webhooks/cashfree-sandbox/<account>/`) for API version 2023-08-01. Subscribe to payment success, failure, and user-dropped events. Cashfree signs webhooks with the secret key: Mandali checks `x-webhook-signature` as base64 HMAC-SHA256 of `x-webhook-timestamp` followed by the raw body.
 3. The buyer pays on Cashfree's hosted checkout in the same tab, then returns to the Mandali session page. That page asks the server to check the order. Mandali records a payment only after fetching it from Cashfree's API as `SUCCESS` for the exact order, amount in paise, and INR. A browser return is never proof of payment.
 
-Cashfree requires a customer phone number. Routing skips Cashfree for a payment without one, using the phone entered at checkout or the customer record. Mandali sets the Cashfree order ID to `order_<attempt UUID hex>`. If order creation times out, the attempt stays uncertain. Because the ID is deterministic, a Cashfree `409` on retry also counts as uncertain, and reconciliation finds the original order instead of creating a second one. Cashfree payment IDs are stored as `pay_<cf_payment_id>`. Cashfree reports refunds through a separate API that Mandali does not read yet; refund reconciliation remains Part 7.
+Cashfree requires a customer phone number. Routing skips Cashfree for a payment without one, using the phone entered at checkout or the customer record. Mandali sets the Cashfree order ID to `order_<attempt UUID hex>`. If order creation times out, the attempt stays uncertain. Because the ID is deterministic, a Cashfree `409` on retry also counts as uncertain, and reconciliation finds the original order instead of creating a second one. Cashfree payment IDs are stored as `pay_<cf_payment_id>`. Cashfree reports refunds through a separate API that Mandali does not read yet; gateway refund reconciliation arrives with live collection.
 
 ## Account details
 
@@ -67,4 +67,4 @@ Only administrators can connect gateways, edit account details, change the polic
 
 Provider responses are mocked. A real Cashfree Sandbox order, hosted checkout, and webhook still need verifying with the merchant's sandbox account on the deployed HTTPS service, as for Razorpay in Part 3. Field names follow Cashfree's PG API version 2023-08-01; confirm them against the current documentation before relying on them. Screens were rendered with dummy data and checked with Hallmark's `sloplint --scope app --render`: 0 FAIL, 0 REFLEX, 0 WARN across 32 screens.
 
-Not included: live credentials, payment-method selection before routing, recurring or mandate routing (Part 5), refunds (Part 7), and more than two providers.
+Not included: live credentials, payment-method selection before routing, recurring or mandate routing (Part 5), gateway refund APIs, and more than two providers.

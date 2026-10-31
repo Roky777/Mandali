@@ -1,0 +1,26 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}Needs attention{% endblock %}{% block content %}{% include 'reports/nav.html' %}
+<p class="section-note">{% if open_count %}{{ open_count }} kind{{ open_count|pluralize }} of work need{{ open_count|pluralize:'s,' }} a person. Each list shows up to 20 items.{% else %}Nothing needs attention right now.{% endif %}</p>
+{% for group in groups %}{% if group.items %}<section class="activity">
+<h2>{{ group.title }}</h2>
+<p class="section-note">{{ group.help }}</p>
+<ul class="activity-list">{% for item in group.items %}<li>{% if group.key == 'overdue' or group.key == 'refunds' or group.key == 'drafts' %}<div>
+<a href="{% url 'invoice_detail' workspace.pk item.pk %}"><strong>{{ item.label }}</strong></a>
+<span>{{ item.customer_name|default:item.customer.name }}{% if group.key == 'overdue' %}, {{ item.balance|inr }} owed since {{ item.due_date|date:'d M Y' }}{% elif group.key == 'refunds' %}, {{ item.refund_due|inr }} due back{% else %}, started {{ item.created_at|date:'d M Y' }}{% endif %}</span>
+</div>{% elif group.key == 'quotes' %}<div>
+<a href="{% url 'subscription_detail' workspace.pk item.pk %}"><strong>{{ item.number }}</strong></a>
+<span>{{ item.customer.name }}, expired {{ item.valid_until|date:'d M Y' }}</span>
+</div>{% elif group.key == 'gateway' %}<div>
+<a href="{% url 'checkout_links' workspace.pk %}"><strong>{{ item.invoice.number }}</strong></a>
+<span>{{ item.gateway.get_provider_display }}: {{ item.get_status_display }}</span>
+</div>{% elif group.key == 'webhooks' %}<div>
+{% if is_admin %}<a href="{% url 'integration_webhook' workspace.pk item.endpoint_id %}"><strong class="code">{{ item.event_type }}</strong></a>{% else %}<strong class="code">{{ item.event_type }}</strong>{% endif %}
+<span>{{ item.last_error|default:'No response' }}</span>
+</div>{% else %}<div>
+{% if is_admin %}<a href="{% url 'integration_run' workspace.pk item.pk %}"><strong>{{ item.connector.name }}</strong></a>{% else %}<strong>{{ item.connector.name }}</strong>{% endif %}
+<span>{{ item.error }}</span>
+</div>{% endif %}<time datetime="{{ item.created_at|date:'c' }}">{{ item.created_at|date:'d M Y' }}</time>
+</li>{% endfor %}</ul>
+</section>{% endif %}{% empty %}{% endfor %}{% if not open_count %}<section class="empty">
+<h2>All clear</h2>
+<p>Overdue invoices, refunds due, stale drafts, expired quotations, and failed gateway, webhook, or sync work will appear here.</p>
+</section>{% endif %}{% endblock %}

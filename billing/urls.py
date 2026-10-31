@@ -45,4 +45,8 @@ urlpatterns = [
     path("invoices/<int:pk>/cancel/", views.invoice_cancel, name="invoice_cancel"),
     path("invoices/<int:pk>/payments/", views.payment_record, name="payment_record"),
     path("payments/<int:pk>/reverse/", views.payment_reverse, name="payment_reverse"),
+    path("invoices/<int:pk>/credit-notes/", views.credit_note_create, name="credit_note_create"),
+    path("invoices/<int:pk>/refunds/", views.refund_create, name="refund_create"),
+    path("invoices/<int:pk>/payments/<int:payment_id>/receipt/", views.payment_receipt, name="payment_receipt"),
+    path("credit-notes/<int:pk>/", views.credit_note_print, name="credit_note_print"),
 ]

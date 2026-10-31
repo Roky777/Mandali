@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     "checkout",
     "integrations",
     "recurring",
+    "portal",
+    "reports",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

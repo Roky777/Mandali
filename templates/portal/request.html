@@ -1,0 +1,13 @@
+{% extends 'portal/base.html' %}{% block portal_title %}Sign in to your invoices{% endblock %}{% block content %}<div class="form-layout">
+<section class="form-intro">
+<h1>See your invoices and receipts</h1>
+<p>Enter your email. Each business that bills you at that address sends you a sign-in link.</p>
+<div class="intro-note">
+<h2>No password needed</h2>
+<p>The link works once and expires after 30 minutes.</p>
+</div>
+</section>
+<section class="form-surface" aria-label="Request a sign-in link">{% if sent %}<h2>Check your email</h2>
+<p>If a business has a customer record with that address, a sign-in link is on its way. It can take a minute to arrive.</p>{% else %}<form method="post" novalidate>{% csrf_token %}{% include 'core/fields.html' %}<button class="button" type="submit">Email me a link</button>
+</form>{% endif %}</section>
+</div>{% endblock %}

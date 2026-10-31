@@ -12,6 +12,8 @@ from core.models import Membership
 from core.views import context, workspace_access
 from . import services
 from .forms import (
+    CreditNoteForm,
+    RefundForm,
     CustomerForm,
     DiscountForm,
     InvoiceForm,
@@ -26,6 +28,7 @@ from .forms import (
     VariantForm,
 )
 from .models import (
+    CreditNote,
     ZERO,
     Customer,
     Discount,
@@ -660,6 +663,9 @@ def invoice_context(membership, invoice):
         "automatic_cycle": automatic_cycle,
         "lines": lines,
         "payments": payments,
+        "credit_notes": invoice.credit_notes.select_related("created_by"),
+        "credit_left": invoice.total - invoice.credited,
+        "refunds": invoice.refunds.select_related("recorded_by"),
         "discount_problem": problem,
         "today": timezone.localdate(),
         "remove_url": (
@@ -682,6 +688,8 @@ def invoice_detail(request, membership, pk):
             "line_form": LineForm(workspace=membership.workspace),
             "payment_form": PaymentForm(initial={"received_on": timezone.localdate()}),
             "reason_form": ReasonForm(),
+            "credit_form": CreditNoteForm(),
+            "refund_form": RefundForm(initial={"refunded_on": timezone.localdate(), "amount": invoice.refund_due or None}),
         }
     )
     return render(request, "billing/invoice_detail.html", data)
@@ -810,3 +818,62 @@ def payment_reverse(request, membership, pk):
     except BillingError as error:
         messages.error(request, str(error))
     return redirect(url("invoice_detail", membership, payment.invoice_id))
+
+
+@require_POST
+@workspace_access(admin=True)
+def credit_note_create(request, membership, pk):
+    invoice = get_object_or_404(Invoice, pk=pk, workspace=membership.workspace)
+    form = CreditNoteForm(request.POST)
+    try:
+        if not form.is_valid():
+            raise BillingError("Enter a credit amount and a reason.")
+        note = services.issue_credit_note(
+            invoice, request.user, form.cleaned_data["amount"], form.cleaned_data["reason"]
+        )
+        invoice.refresh_from_db()
+        messages.success(
+            request,
+            f"Credit note {note.number} issued."
+            + (f" {inr(invoice.refund_due)} is now due back to the customer." if invoice.refund_due else ""),
+        )
+    except BillingError as error:
+        messages.error(request, str(error))
+    return redirect(url("invoice_detail", membership, pk))
+
+
+@require_POST
+@workspace_access(admin=True)
+def refund_create(request, membership, pk):
+    invoice = get_object_or_404(Invoice, pk=pk, workspace=membership.workspace)
+    form = RefundForm(request.POST)
+    try:
+        if not form.is_valid():
+            raise BillingError(" ".join(e for errors in form.errors.values() for e in errors))
+        services.record_refund(invoice, request.user, **form.cleaned_data)
+        messages.success(request, f"Refund of {inr(form.cleaned_data['amount'])} recorded.")
+    except BillingError as error:
+        messages.error(request, str(error))
+    return redirect(url("invoice_detail", membership, pk))
+
+
+@workspace_access()
+def payment_receipt(request, membership, pk, payment_id):
+    invoice = get_object_or_404(Invoice, pk=pk, workspace=membership.workspace)
+    payment = get_object_or_404(Payment, pk=payment_id, invoice=invoice)
+    return render(
+        request,
+        "billing/receipt.html",
+        {**context(membership), "invoice": invoice, "payment": payment, "back": url("invoice_detail", membership, pk)},
+    )
+
+
+@workspace_access()
+def credit_note_print(request, membership, pk):
+    note = get_object_or_404(CreditNote.objects.select_related("invoice"), pk=pk, workspace=membership.workspace)
+    return render(
+        request,
+        "billing/credit_note.html",
+        {**context(membership), "note": note, "invoice": note.invoice, "back": url("invoice_detail", membership, note.invoice_id)},
+    )
+

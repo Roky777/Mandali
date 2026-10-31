@@ -1,0 +1,5 @@
+{% extends 'portal/base.html' %}{% block portal_title %}Link no longer valid{% endblock %}{% block content %}<section class="narrow">
+<h1>This link no longer works</h1>
+<p>Sign-in links work once and expire after 30 minutes. Ask for a new one.</p>
+<a class="button" href="{% url 'portal_request' %}">Get a new link</a>
+</section>{% endblock %}

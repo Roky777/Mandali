@@ -1,0 +1,7 @@
+<div class="page-heading">
+<div>
+<h1>Reports</h1>
+<p>Money in and out of {{ workspace.name }}, what needs attention, and every recorded change.</p>
+</div>
+</div>
+<nav class="subtabs" aria-label="Report sections">{% for name, title in sections %}<a href="{% url name workspace.pk %}" {% if name == section %}aria-current="page"{% endif %}>{{ title }}</a>{% endfor %}</nav>

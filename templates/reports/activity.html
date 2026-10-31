@@ -1,0 +1,26 @@
+{% extends 'base.html' %}{% block title %}Activity{% endblock %}{% block content %}{% include 'reports/nav.html' %}
+<form class="filter-row" method="get">
+<div>
+<label for="id_q">{{ form.q.label }}</label>
+<input type="search" name="q" id="id_q" value="{{ form.q.value|default:'' }}" placeholder="Invoice number, customer, or action" autocomplete="off">
+</div>
+<div>
+<label for="id_who">{{ form.who.label }}</label>{{ form.who }}</div>
+<div>
+<label for="id_start">{{ form.start.label }}</label>{{ form.start }}</div>
+<div>
+<label for="id_end">{{ form.end.label }}</label>{{ form.end }}</div>
+<button class="button quiet" type="submit">Filter</button>
+</form>
+{% if page.object_list %}<ul class="activity-list">{% for event in page %}<li>
+<div>
+<strong>{{ event.action }}</strong>
+<span>{% if event.actor_label %}{{ event.actor_label }}{% elif event.is_system %}Mandali automation{% else %}{{ event.actor.first_name|default:event.actor.email|default:'Account removed' }}{% endif %}{% if event.detail %}: {{ event.detail }}{% endif %}</span>
+</div>
+<time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'d M Y, H:i' }} IST</time>
+</li>{% endfor %}</ul>
+{% include 'billing/pagination.html' %}{% else %}<section class="empty">
+<h2>No matching activity</h2>
+<p>Try a wider date range or clear the search.</p>
+<a href="{% url 'reports_activity' workspace.pk %}">Show all activity</a>
+</section>{% endif %}{% endblock %}

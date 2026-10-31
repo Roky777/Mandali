@@ -1,0 +1,30 @@
+{% extends 'portal/base.html' %}{% load billing %}{% block content %}<div class="page-heading">
+<div>
+<h1>Your invoices</h1>
+<p>From {% for group in groups %}{{ group.customer.workspace.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+</div>{% include 'portal/signout.html' %}</div>
+{% for group in groups %}<section class="activity">
+<h2>{{ group.customer.workspace.name }}</h2>
+<h3 class="portal-subhead">Awaiting payment</h3>{% if group.open %}<ul class="activity-list">{% for invoice in group.open %}<li>
+<div>
+<a href="{% url 'portal_invoice' invoice.pk %}"><strong>{{ invoice.number }}</strong></a>
+<span>{{ invoice.balance|inr }} due {{ invoice.due_date|date:'d M Y' }}{% if invoice.is_sandbox %}, test invoice{% endif %}</span>
+</div>{% include 'billing/invoice_status.html' %}</li>{% endfor %}</ul>{% else %}<p class="muted">Nothing is awaiting payment.</p>{% endif %}
+<h3 class="portal-subhead">Earlier invoices</h3>{% if group.settled %}<ul class="activity-list">{% for invoice in group.settled %}<li>
+<div>
+<a href="{% url 'portal_invoice' invoice.pk %}"><strong>{{ invoice.number }}</strong></a>
+<span>{{ invoice.total|inr }}, issued {{ invoice.issue_date|date:'d M Y' }}</span>
+</div>
+<span class="tag status-{{ invoice.status }}">{{ invoice.get_status_display }}</span>
+</li>{% endfor %}</ul>{% else %}<p class="muted">No earlier invoices.</p>{% endif %}
+<h3 class="portal-subhead">Subscriptions</h3>{% if group.subscriptions %}<ul class="activity-list">{% for subscription in group.subscriptions %}<li>
+<div>
+<strong>{{ subscription.number }}</strong>
+<span>{{ subscription.plan|default:'One-time quotation' }}, {{ subscription.total|inr }} per period</span>
+</div>
+<div class="heading-actions"><span class="tag status-{{ subscription.status }}">{{ subscription.get_status_display }}</span>{% if subscription.plan %}{% if subscription.status == 'active' and subscription.plan.can_pause %}<form method="post" action="{% url 'portal_subscription_action' subscription.pk 'pause' %}">{% csrf_token %}<button class="text-button" type="submit">Pause</button>
+</form>{% elif subscription.status == 'paused' %}<form method="post" action="{% url 'portal_subscription_action' subscription.pk 'resume' %}">{% csrf_token %}<button class="text-button" type="submit">Resume</button>
+</form>{% endif %}{% if subscription.status == 'active' or subscription.status == 'paused' %}{% if subscription.plan.can_close %}<form method="post" action="{% url 'portal_subscription_action' subscription.pk 'close' %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Close this subscription? This cannot be undone here.">Close</button>
+</form>{% endif %}{% endif %}{% endif %}</div>
+</li>{% endfor %}</ul>{% else %}<p class="muted">No subscriptions.</p>{% endif %}
+</section>{% endfor %}{% endblock %}

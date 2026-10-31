@@ -1,0 +1,5 @@
+{% extends 'portal/base.html' %}{% block portal_title %}{% if note %}Credit note {{ note.number }}{% else %}Receipt for {{ invoice.number }}{% endif %}{% endblock %}{% block content %}<div class="print-toolbar">
+<a class="back-link" href="{% url 'portal_invoice' invoice.pk %}">Back to the invoice</a>
+<button class="button" type="button" data-print>Print or save as PDF</button>
+</div>
+{% include sheet %}{% endblock %}

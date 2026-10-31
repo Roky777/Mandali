@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="same-origin">
-<meta name="description" content="Review your invoice and complete a sandbox payment securely through the business's test payment gateway.">
+<meta name="description" content="{% block description %}Review your invoice and complete a sandbox payment securely through the business's test payment gateway.{% endblock %}">
 <title>{% block title %}Sandbox checkout{% endblock %} | Mandali</title>
 <link rel="icon" href="{% static 'core/favicon.svg' %}">
 <link rel="stylesheet" href="{% static 'core/app.css' %}">
@@ -17,12 +17,12 @@
 <div class="container topbar-inner">
 <span class="wordmark">
 <span class="mark" aria-hidden="true">m</span>mandali</span>
-<span class="tag">Sandbox checkout</span>
+{% block header_tag %}<span class="tag">Sandbox checkout</span>{% endblock %}
 </div>
 </header>
-<main class="container main" id="main">{% block content %}{% endblock %}</main>
+<main class="container main" id="main">{% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
 <footer class="container footer">
-<span>Test environment. No real money moves.</span>
+<span>{% block footer_note %}Test environment. No real money moves.{% endblock %}</span>
 <span>Powered by Mandali</span>
 </footer>
 </body>

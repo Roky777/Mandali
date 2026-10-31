@@ -31,6 +31,12 @@ Gateway settings now have one subtab per provider, plus **Gateway selection**. T
 
 Rendered with dummy data, `sloplint --scope app --render` reported 0 FAIL, 0 REFLEX, and 0 WARN across 32 screens, after capping a long help line. Captures were reviewed at desktop and phone widths, and oversized radio buttons and a truncated override select were fixed as a result. No finish-review subagent was run.
 
+## Part 7: portal, adjustments, and reports
+
+Credit notes and refunds sit in the invoice ledger, which now shows credit notes, refunds, and a red **Refund due to customer** line when money is owed back. The credit-note form is a disclosure, so the panel stays calm. Receipts and credit notes reuse the printable invoice sheet. The customer portal uses the public checkout shell with a **Customer portal** tag, and shows the same ledger and status tags as staff screens, in plain words. Reports open with two stat rows, each figure followed by its own definition, then aging and method tables. **Needs attention** lists only the kinds of work that exist right now. Reports is the signature: every figure states exactly what it counts.
+
+Rendered with dummy data, `sloplint --scope app --render` reported 0 FAIL and 0 WARN across 43 screens. Three REFLEX findings were waived on the record: real customer names wrap at 320px, and a closed disclosure is measured while hidden. A credit-note reason overflowing on phones and a crowded stat row were fixed after reviewing the captures. No finish-review subagent was run.
+
 For future screens, use the existing tokens and interaction patterns. Keep invoice creation, checkout, API configuration, and gateway routing for their planned increments. Never present their selection during onboarding as an active integration.
 
 ## Part 3 review

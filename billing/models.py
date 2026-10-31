@@ -362,6 +362,9 @@ class Invoice(models.Model):
     tax_total = models.DecimalField(**MONEY, default=ZERO)
     total = models.DecimalField(**MONEY, default=ZERO)
     amount_paid = models.DecimalField(**MONEY, default=ZERO)
+    # Running totals of credit notes and refunds; each document is kept too.
+    credited = models.DecimalField(**MONEY, default=ZERO)
+    refunded = models.DecimalField(**MONEY, default=ZERO)
     # Billing identities are copied at issue so an issued invoice stays as sent.
     discount_label = models.CharField(max_length=120, blank=True)
     customer_name = models.CharField(max_length=150, blank=True)
@@ -390,15 +393,37 @@ class Invoice(models.Model):
                 name="unique_invoice_number",
             ),
             unique_when_set("external_id", "unique_invoice_external_id"),
+            # Money received net of refunds never exceeds what is owed after
+            # credits, except when a credit note leaves a refund due.
             models.CheckConstraint(
-                condition=Q(amount_paid__gte=0) & Q(amount_paid__lte=F("total")),
-                name="invoice_paid_within_total",
+                condition=Q(amount_paid__gte=0)
+                & Q(credited__gte=0)
+                & Q(credited__lte=F("total"))
+                & Q(refunded__gte=0)
+                & Q(refunded__lte=F("amount_paid"))
+                & Q(amount_paid__lte=F("total") + F("refunded")),
+                name="invoice_amounts_consistent",
             ),
         ]
 
     @property
+    def amount_due(self):
+        """What the customer owes after credit notes."""
+        return self.total - self.credited
+
+    @property
+    def net_paid(self):
+        return self.amount_paid - self.refunded
+
+    @property
     def balance(self):
-        return self.total - self.amount_paid
+        """Outstanding amount, never negative; see refund_due for the rest."""
+        return max(self.amount_due - self.net_paid, ZERO)
+
+    @property
+    def refund_due(self):
+        """Money received beyond what is owed after credit notes."""
+        return max(self.net_paid - self.amount_due, ZERO)
 
     def is_overdue(self, today):
         return (
@@ -472,3 +497,54 @@ class Payment(models.Model):
     @property
     def is_gateway(self):
         return self.method in self.GATEWAY_METHODS
+
+
+class CreditNote(models.Model):
+    """Reduces what an issued invoice asks for. The invoice itself never changes."""
+
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
+    invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name="credit_notes")
+    number = models.CharField(max_length=20)
+    amount = models.DecimalField(**MONEY)
+    # Proportional split of the credited amount, for reports and the document.
+    taxable_amount = models.DecimalField(**MONEY)
+    tax_amount = models.DecimalField(**MONEY)
+    reason = models.CharField(max_length=200)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["workspace", "number"], name="unique_credit_note_number"),
+            models.CheckConstraint(condition=Q(amount__gt=0), name="credit_note_positive"),
+        ]
+
+
+class Refund(models.Model):
+    """Money returned to a customer outside Mandali, recorded against an invoice."""
+
+    METHODS = [
+        (value, label)
+        for value, label in Payment.Method.choices
+        if value not in Payment.GATEWAY_METHODS
+    ]
+
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
+    invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name="refunds")
+    amount = models.DecimalField(**MONEY)
+    method = models.CharField(max_length=10, choices=METHODS)
+    refunded_on = models.DateField()
+    reference = models.CharField(max_length=80, blank=True)
+    note = models.CharField(max_length=200, blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["refunded_on", "id"]
+        constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name="refund_positive")]
+

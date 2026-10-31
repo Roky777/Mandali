@@ -1,9 +1,9 @@
 from datetime import timedelta
 from django.db import transaction
-from django.db.models import F
 from django.utils import timezone
 from billing import services as billing
 from billing.models import Subscription, Invoice, InvoiceLine, Discount
+from billing.services import OWED
 from checkout.services import lock_workspace, log
 from .calendar import advance
 from .models import Schedule, Cycle, Notice
@@ -201,11 +201,12 @@ def renew(subscription, user, expiry_date):
 
 def queue_due_notices(today=None):
     today = today or timezone.localdate()
-    invoices = Invoice.objects.filter(
+    # Credit notes and refunds count, so only invoices still owing are reminded.
+    invoices = Invoice.objects.alias(owed=OWED).filter(
         billing_cycle__schedule__mode="invoice",
         billing_cycle__schedule__reminders=True,
         status="issued",
-        amount_paid__lt=F("total"),
+        owed__gt=0,
         due_date__lte=today,
     )
     for invoice in invoices.iterator():

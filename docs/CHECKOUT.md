@@ -29,7 +29,7 @@ Changing gateway credentials creates a new account version. Preserve old provide
 - Administrators can locate an uncertain order in Razorpay Test using the attempt UUID without hyphens as the order receipt. Enter its order ID in Payments and reconcile. Mandali verifies receipt, attempt notes, currency, and amount before adopting it.
 - Browser callbacks use the stored order ID for signature verification. Webhooks verify the raw request body before processing. Both fetch authoritative payment evidence from Razorpay and require a captured INR payment matching the reserved amount and order. Callback/webhook retries are deduplicated transactionally.
 - Revocation stops new starts; it does not erase a payment already started at the provider. Webhooks can still reconcile that evidence after link/session expiry.
-- Overpayments, refunded captures, duplicate references, and conflicts with manual payments go to **Needs review**. No second ledger entry is silently added. Online payments cannot be reversed with the offline-payment action. Refund handling is deferred to Part 7.
+- Overpayments, refunded captures, duplicate references, and conflicts with manual payments go to **Needs review**. No second ledger entry is silently added. Online payments cannot be reversed with the offline-payment action. Sandbox payments are refunded in the gateway's test dashboard; Part 7's recorded refunds apply to real invoices only.
 - No card details or raw webhook bodies are retained. The provider checkout script loads only on a prepared public payment session. Customers do not receive access to any other customer or invoice.
 
 ## Validation and limits

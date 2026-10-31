@@ -1,0 +1,34 @@
+{% load billing %}<article class="invoice-sheet">
+<header class="sheet-head">
+<div>
+<h1>Credit note {{ note.number }}</h1>
+<p>Against invoice {{ invoice.number }}, issued {{ invoice.issue_date|date:'d M Y' }}</p>
+</div>
+<dl class="sheet-dates">
+<div>
+<dt>Issued</dt>
+<dd>{{ note.created_at|date:'d M Y' }}</dd>
+</div>
+</dl>
+</header>
+{% include 'billing/document_parties.html' with party_label='Credited to' %}
+<dl class="sheet-totals">
+<div class="wrap">
+<dt>Reason</dt>
+<dd>{{ note.reason }}</dd>
+</div>
+<div>
+<dt>Taxable value</dt>
+<dd>{{ note.taxable_amount|inr }}</dd>
+</div>
+<div>
+<dt>Tax</dt>
+<dd>{{ note.tax_amount|inr }}</dd>
+</div>
+<div class="ledger-total">
+<dt>Credit (INR)</dt>
+<dd>{{ note.amount|inr }}</dd>
+</div>
+</dl>
+<p class="muted sheet-foot">Tax is credited in proportion to the original invoice. Check credit notes against your GST obligations before relying on them for tax filing.</p>
+</article>

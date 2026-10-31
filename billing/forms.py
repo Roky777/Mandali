@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django import forms
 from django.db.models import Q
 from django.utils import timezone
@@ -11,6 +12,7 @@ from .models import (
     Product,
     ProductVariant,
     QuotationTemplate,
+    Refund,
     Subscription,
     Tax,
 )
@@ -420,3 +422,39 @@ class PaymentForm(forms.ModelForm):
 
 class ReasonForm(forms.Form):
     reason = forms.CharField(label="Reason", max_length=200)
+
+
+class CreditNoteForm(forms.Form):
+    amount = forms.DecimalField(label="Credit amount (₹)", max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    reason = forms.CharField(label="Reason", max_length=200, help_text="Shown on the credit note, for example: one session not delivered.")
+
+
+class RefundForm(forms.ModelForm):
+    class Meta:
+        model = Refund
+        fields = ["amount", "method", "refunded_on", "reference", "note"]
+        labels = {
+            "amount": "Refund amount (₹)",
+            "method": "How it was returned",
+            "refunded_on": "Refunded on",
+            "reference": "Reference (optional)",
+            "note": "Note (optional)",
+        }
+        widgets = {"refunded_on": DATE}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["method"].choices = [("", "Choose how it was returned"), *Refund.METHODS]
+
+    def clean_amount(self):
+        amount = self.cleaned_data["amount"]
+        if amount <= 0:
+            raise forms.ValidationError("Enter an amount above zero.")
+        return amount
+
+    def clean_refunded_on(self):
+        day = self.cleaned_data["refunded_on"]
+        if day > timezone.localdate():
+            raise forms.ValidationError("A refund cannot be dated in the future.")
+        return day
+

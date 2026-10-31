@@ -47,7 +47,28 @@
 <span>{% if payment.is_gateway %}Verified by {{ payment.get_method_display }}{% else %}Recorded by {{ payment.recorded_by.first_name|default:payment.recorded_by.email }}{% endif %}{% if payment.note %}: {{ payment.note }}{% endif %}</span>{% if payment.reversed_at %}<span>Reversed {{ payment.reversed_at|date:'d M Y' }}: {{ payment.reversal_reason }}</span>{% endif %}</div>{% if is_admin and not payment.reversed_at and not payment.is_gateway %}<form class="reason-form" method="post" action="{% url 'payment_reverse' workspace.pk payment.pk %}">{% csrf_token %}<label for="reverse-{{ payment.pk }}">Reason to reverse</label>
 <input id="reverse-{{ payment.pk }}" name="reason" maxlength="200" required>
 <button class="text-button" type="submit" data-confirm="Reverse this payment and restore the balance?">Reverse</button>
-</form>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">No payments recorded yet.</p>{% endif %}</section>{% endif %}
+</form>{% endif %}{% if not payment.reversed_at %}<a href="{% url 'payment_receipt' workspace.pk invoice.pk payment.pk %}">Receipt</a>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">No payments recorded yet.</p>{% endif %}</section>{% endif %}
+{% if credit_notes or refunds %}<section class="activity">
+<div class="section-heading">
+<h2>Credit notes and refunds</h2>
+<span class="muted">The invoice stays as issued; these documents adjust what is owed</span>
+</div>
+<ul class="activity-list">{% for note in credit_notes %}<li>
+<div>
+<a href="{% url 'credit_note_print' workspace.pk note.pk %}"><strong>Credit note {{ note.number }}</strong></a>
+<span>{{ note.amount|inr }} credited, including {{ note.tax_amount|inr }} tax: {{ note.reason }}</span>
+<span>Issued by {{ note.created_by.first_name|default:note.created_by.email }}</span>
+</div>
+<time datetime="{{ note.created_at|date:'c' }}">{{ note.created_at|date:'d M Y' }}</time>
+</li>{% endfor %}{% for refund in refunds %}<li>
+<div>
+<strong>{{ refund.amount|inr }} refunded</strong>
+<span>{{ refund.get_method_display }}{% if refund.reference %}, reference {{ refund.reference }}{% endif %}{% if refund.note %}: {{ refund.note }}{% endif %}</span>
+<span>Recorded by {{ refund.recorded_by.first_name|default:refund.recorded_by.email }}</span>
+</div>
+<time datetime="{{ refund.refunded_on|date:'c' }}">{{ refund.refunded_on|date:'d M Y' }}</time>
+</li>{% endfor %}</ul>
+</section>{% endif %}
 </div>
 <aside class="ledger" aria-label="Balance">
 <h2>Balance</h2>
@@ -65,20 +86,37 @@
 <div class="ledger-total">
 <dt>Invoice total</dt>
 <dd>{{ invoice.total|inr }}</dd>
-</div>{% if invoice.status != 'draft' and invoice.status != 'cancelled' %}<div>
+</div>{% if invoice.status != 'draft' and invoice.status != 'cancelled' %}{% if invoice.credited %}<div>
+<dt>Credit notes</dt>
+<dd>-{{ invoice.credited|inr }}</dd>
+</div>{% endif %}<div>
 <dt>Paid</dt>
 <dd>-{{ invoice.amount_paid|inr }}</dd>
-</div>
+</div>{% if invoice.refunded %}<div>
+<dt>Refunded</dt>
+<dd>{{ invoice.refunded|inr }}</dd>
+</div>{% endif %}
 <div class="ledger-total">
 <dt>Remaining</dt>
 <dd>{{ invoice.balance|inr }}</dd>
-</div>{% endif %}</dl>
+</div>{% if invoice.refund_due %}<div class="ledger-total refund-due">
+<dt>Refund due to customer</dt>
+<dd>{{ invoice.refund_due|inr }}</dd>
+</div>{% endif %}{% endif %}</dl>
 {% if invoice.status == 'draft' %}<form method="post" action="{% url 'invoice_issue' workspace.pk invoice.pk %}">{% csrf_token %}<button class="button full" type="submit" {% if not lines %}disabled{% endif %} data-confirm="Issue this invoice? Its number and amounts are then fixed.">Issue invoice</button>
 </form>{% if not lines %}<p class="field-help">Add a line to issue this invoice.</p>{% endif %}
 <form method="post" action="{% url 'invoice_delete' workspace.pk invoice.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Delete this draft invoice?">Delete draft</button>
 </form>{% elif automatic_cycle %}<p class="field-help">Collection is managed by the authorized provider mandate.</p><a href="{% url 'recurring_detail' workspace.pk automatic_cycle.schedule_id %}">Reconcile in Automation</a>{% elif invoice.status == 'issued' %}<form class="payment-form" method="post" action="{% url 'payment_record' workspace.pk invoice.pk %}" novalidate>{% csrf_token %}<h3>Record a payment</h3>{% include 'core/fields.html' with form=payment_form %}<button class="button full" type="submit">Record payment</button>
 </form>{% endif %}
-{% if is_admin and invoice.status == 'issued' and not invoice.amount_paid and not automatic_cycle %}<form class="reason-form cancel-form" method="post" action="{% url 'invoice_cancel' workspace.pk invoice.pk %}">{% csrf_token %}<label for="cancel-reason">Reason to cancel</label>
+{% if is_admin and not invoice.is_sandbox and invoice.refund_due %}<form class="payment-form" method="post" action="{% url 'refund_create' workspace.pk invoice.pk %}" novalidate>{% csrf_token %}<h3>Record a refund</h3>{% include 'core/fields.html' with form=refund_form %}<button class="button full" type="submit">Record refund</button>
+</form>{% endif %}
+{% if is_admin and not invoice.is_sandbox and invoice.credited < invoice.total %}{% if invoice.status == 'issued' or invoice.status == 'paid' %}<details class="disclosure">
+<summary>Issue a credit note</summary>
+<form method="post" action="{% url 'credit_note_create' workspace.pk invoice.pk %}" novalidate>{% csrf_token %}{% include 'core/fields.html' with form=credit_form %}<p class="field-help">Up to {{ credit_left|inr }} can still be credited. A credit on a paid invoice leaves a refund due.</p>
+<button class="button quiet full" type="submit" data-confirm="Issue this credit note? It cannot be edited afterwards.">Issue credit note</button>
+</form>
+</details>{% endif %}{% endif %}
+{% if is_admin and invoice.status == 'issued' and not invoice.amount_paid and not invoice.credited and not automatic_cycle %}<form class="reason-form cancel-form" method="post" action="{% url 'invoice_cancel' workspace.pk invoice.pk %}">{% csrf_token %}<label for="cancel-reason">Reason to cancel</label>
 <input id="cancel-reason" name="reason" maxlength="200" required>
 <button class="text-button" type="submit" data-confirm="Cancel this invoice? Its number is kept and the amount is no longer due.">Cancel invoice</button>
 </form>{% endif %}</aside>
