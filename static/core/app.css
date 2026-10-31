@@ -1,6 +1,6 @@
-/* Hallmark · shape: app screen · genre: modern-minimal · theme: Coral, warm paper with a coral accent (dealt 1/3)
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Garden (by request), oat paper, deep green ink, leaf-green signal, clay for warnings
  * nav: top bar and workspace tabs, catalog and filter subtabs · signature: workspace essentials ledger; invoice balance ledger; sync preview · states: empty, error, full, submitting, draft, issued, overdue, paid, cancelled
- * axes: light/grotesk-sans/warm · posture: restrained · dose: white, no imagery or decorative motion · v2.0.0 */
+ * axes: light/serif-heads/warm green · posture: restrained · dose: white, no imagery or decorative motion · v2.0.0 */
 /* Hallmark · finish-review: subagent, ship; mobile member rows refined after review. Login sweep: 0 FAIL, 0 REFLEX, 0 WARN. Part 2 billing sweep, 17 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 4 sweep, 26 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 6 sweep, 32 screens: 0 FAIL, 0 REFLEX, 0 WARN. Part 7 sweep, 43 screens: 0 FAIL, 0 WARN, 3 waived. */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, kept business settings and access as the screen's substance */
 /* Hallmark · waive 49b · first table cells keep overflow-wrap: anywhere · customer names are real data and must wrap rather than overflow at 320px */
@@ -333,3 +333,10 @@ section > h2 + .stat-row { margin-top: var(--space-md); }
 /* Coral pass: one-line text actions; the balance ledger reads as the signature panel. */
 .text-button { white-space: nowrap; }
 .ledger { border-top: 3px solid var(--color-accent); }
+/* Garden: leaf green is the working colour and means money in; clay marks partial and pending states. */
+.tag.status-active, .tag.status-paid { background: var(--color-in-soft); color: var(--color-in-ink); }
+.ledger { border-top-color: var(--color-accent); }
+.tag.status-partial, .tag.status-issued, .tag.status-quotation, .tag.status-confirmed { background: var(--color-clay-soft); color: oklch(38% 0.11 46); box-shadow: none; }
+h1, h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+.stat-row dd, .ledger .ledger-total dd { font-variant-numeric: tabular-nums; }
+
