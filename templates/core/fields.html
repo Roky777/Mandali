@@ -1,4 +1,6 @@
 {% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
-{% for field in form %}<div class="field {% if field.field.widget.input_type == 'checkbox' %}check-field{% endif %}">{% if field.field.widget.input_type == 'checkbox' %}<div class="check-line">{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+{% for field in form %}<div class="field {% if field.field.widget.input_type == 'checkbox' %}check-field{% endif %}">{% if field.field.widget.allow_multiple_selected and field.field.widget.input_type == 'checkbox' %}<fieldset class="check-group">
+<legend>{{ field.label }}</legend>{% for option in field %}<div class="check-line">{{ option.tag }}<label for="{{ option.id_for_label }}">{{ option.choice_label }}</label>
+</div>{% empty %}<p class="muted">No products yet.</p>{% endfor %}</fieldset>{% elif field.field.widget.input_type == 'checkbox' %}<div class="check-line">{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label>
 </div>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required">Required</span>{% endif %}</label>{{ field }}{% endif %}
 {% if field.errors %}<div class="field-help field-error" id="{{ field.auto_id }}_error" role="alert">{{ field.errors }}</div>{% elif field.help_text %}<div class="field-help" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</div>{% endif %}</div>{% endfor %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}{{ product.name }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'catalog' workspace.pk 'products' %}">Products</a>
+<h1>{{ product.name }}</h1>
+</div>{% if is_admin %}<a class="button quiet" href="{% url 'catalog_edit' workspace.pk 'products' product.pk %}">Edit product</a>{% endif %}</div>
+<dl class="essentials compact">
+<div>
+<dt>Sales price</dt>
+<dd>{{ product.sales_price|inr }}<small>Cost price {{ product.cost_price|inr }}</small>
+</dd>
+</div>
+<div>
+<dt>Type and tax</dt>
+<dd>{{ product.get_kind_display }}<small>{{ product.tax|default:'No tax' }}</small>
+</dd>
+</div>
+<div>
+<dt>Availability</dt>
+<dd>{% if product.is_active %}Available for new lines{% else %}Switched off for new lines{% endif %}</dd>
+</div>{% if product.notes %}<div>
+<dt>Notes</dt>
+<dd>{{ product.notes|linebreaksbr }}</dd>
+</div>{% endif %}</dl>
+<section class="activity">
+<div class="section-heading">
+<h2>Variants</h2>
+<span class="muted">Each variant changes the sales price</span>
+</div>{% if variants %}<ul class="activity-list">{% for variant in variants %}<li>
+<div>
+<strong>{{ variant.name }}</strong>
+<span>{{ variant.unit_price|inr }}, {% if variant.price_adjustment >= 0 %}+{% endif %}{{ variant.price_adjustment|inr }} on the sales price</span>
+</div>{% if is_admin %}<form method="post" action="{% url 'variant_remove' workspace.pk variant.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Stop offering this variant on new lines?">Remove</button>
+</form>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">No variants. Add one for sizes, tiers, or seat bundles that change the price.</p>{% endif %}
+{% if is_admin %}<form class="variant-form form-surface" method="post">{% csrf_token %}<h3>Add a variant</h3>{% include 'core/fields.html' %}<button class="button" type="submit">Add variant</button>
+</form>{% endif %}</section>{% endblock %}

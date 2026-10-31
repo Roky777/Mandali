@@ -1,0 +1,48 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path("customers/", views.customers, name="customers"),
+    path("customers/new/", views.customer_edit, name="customer_create"),
+    path("customers/<int:pk>/", views.customer_detail, name="customer_detail"),
+    path("customers/<int:pk>/edit/", views.customer_edit, name="customer_edit"),
+    path("catalog/", views.catalog, name="catalog_home"),
+    path("catalog/products/<int:pk>/", views.product_detail, name="product_detail"),
+    path("catalog/variants/<int:pk>/remove/", views.variant_remove, name="variant_remove"),
+    path("catalog/templates/<int:pk>/", views.template_detail, name="template_detail"),
+    path(
+        "catalog/templates/<int:pk>/lines/<int:line_id>/remove/",
+        views.template_line_remove,
+        name="template_line_remove",
+    ),
+    path("catalog/<str:kind>/", views.catalog, name="catalog"),
+    path("catalog/<str:kind>/new/", views.catalog_edit, name="catalog_create"),
+    path("catalog/<str:kind>/<int:pk>/edit/", views.catalog_edit, name="catalog_edit"),
+    path("subscriptions/", views.subscriptions, name="subscriptions"),
+    path("subscriptions/new/", views.subscription_edit, name="subscription_create"),
+    path("subscriptions/<int:pk>/", views.subscription_detail, name="subscription_detail"),
+    path("subscriptions/<int:pk>/edit/", views.subscription_edit, name="subscription_edit"),
+    path("subscriptions/<int:pk>/lines/", views.subscription_line, name="subscription_line_add"),
+    path(
+        "subscriptions/<int:pk>/lines/<int:line_id>/remove/",
+        views.subscription_line,
+        name="subscription_line_remove",
+    ),
+    path("subscriptions/<int:pk>/action/", views.subscription_action, name="subscription_action"),
+    path("invoices/", views.invoices, name="invoices"),
+    path("invoices/new/", views.invoice_edit, name="invoice_create"),
+    path("invoices/<int:pk>/", views.invoice_detail, name="invoice_detail"),
+    path("invoices/<int:pk>/edit/", views.invoice_edit, name="invoice_edit"),
+    path("invoices/<int:pk>/print/", views.invoice_print, name="invoice_print"),
+    path("invoices/<int:pk>/lines/", views.invoice_line, name="invoice_line_add"),
+    path(
+        "invoices/<int:pk>/lines/<int:line_id>/remove/",
+        views.invoice_line,
+        name="invoice_line_remove",
+    ),
+    path("invoices/<int:pk>/issue/", views.invoice_issue, name="invoice_issue"),
+    path("invoices/<int:pk>/delete/", views.invoice_delete, name="invoice_delete"),
+    path("invoices/<int:pk>/cancel/", views.invoice_cancel, name="invoice_cancel"),
+    path("invoices/<int:pk>/payments/", views.payment_record, name="payment_record"),
+    path("payments/<int:pk>/reverse/", views.payment_reverse, name="payment_reverse"),
+]

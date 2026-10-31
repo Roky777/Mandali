@@ -1,0 +1,62 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}{{ subscription.number }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'subscriptions' workspace.pk %}">Quotations and subscriptions</a>
+<h1>{{ subscription.number }}</h1>
+<p>{{ subscription.customer.name }}, {{ subscription.plan|default:'one-time quotation' }}</p>
+</div>{% if editable %}<a class="button quiet" href="{% url 'subscription_edit' workspace.pk subscription.pk %}">Edit details</a>{% endif %}</div>
+<ol class="lifecycle" aria-label="Lifecycle">{% for step in lifecycle %}<li class="step-{{ step.state }}" {% if step.state == 'current' %}aria-current="step"{% endif %}>{{ step.label }}</li>{% endfor %}</ol>
+<div class="doc-grid">
+<div>
+<dl class="essentials compact">
+<div>
+<dt>Customer</dt>
+<dd><a href="{% url 'customer_detail' workspace.pk subscription.customer.pk %}">{{ subscription.customer.name }}</a><small>{{ subscription.customer.email|default:'No email' }}</small>
+</dd>
+</div>
+<div>
+<dt>Dates</dt>
+<dd>{% if subscription.start_date %}Starts {{ subscription.start_date|date:'d M Y' }}{% else %}No start date{% endif %}<small>{% if subscription.expiry_date %}Expires {{ subscription.expiry_date|date:'d M Y' }}{% else %}No expiry date{% endif %}{% if subscription.valid_until %}. Quotation valid until {{ subscription.valid_until|date:'d M Y' }}{% endif %}</small>
+</dd>
+</div>
+<div>
+<dt>Plan policies</dt>
+<dd>{% if subscription.plan %}{{ subscription.plan }}<small>{% if subscription.plan.can_close %}Can close early{% else %}Closes only at expiry{% endif %}. {% if subscription.plan.can_pause %}Can pause{% else %}Cannot pause{% endif %}. {% if subscription.plan.can_renew %}Renewable{% else %}Not renewable{% endif %}.</small>{% else %}No plan<small>Add a plan before activating a subscription.</small>{% endif %}
+</dd>
+</div>
+<div>
+<dt>Payment terms</dt>
+<dd>{{ subscription.payment_terms_days }} days</dd>
+</div>{% if subscription.notes %}<div>
+<dt>Notes</dt>
+<dd>{{ subscription.notes|linebreaksbr }}</dd>
+</div>{% endif %}</dl>
+<section class="activity">
+<h2>Lines</h2>
+{% include 'billing/lines.html' with parent=subscription remove_url=editable|yesno:'subscription_line_remove,' %}
+{% if editable %}{% url 'subscription_line_add' workspace.pk subscription.pk as add_url %}{% include 'billing/line_form.html' with action=add_url %}{% else %}<p class="field-help">Lines are fixed once a quotation is sent.</p>{% endif %}</section>
+</div>
+<aside class="ledger" aria-label="Totals and actions">
+<h2>Per billing period</h2>
+<dl>
+<div>
+<dt>Subtotal</dt>
+<dd>{{ subscription.subtotal|inr }}</dd>
+</div>
+<div>
+<dt>Tax</dt>
+<dd>{{ subscription.tax_total|inr }}</dd>
+</div>
+<div class="ledger-total">
+<dt>Total</dt>
+<dd>{{ subscription.total|inr }}</dd>
+</div>
+</dl>
+<p class="field-help">Discounts are applied on invoices.</p>{% if actions or can_invoice %}<div class="ledger-actions">{% for name, label in actions %}<form method="post" action="{% url 'subscription_action' workspace.pk subscription.pk %}">{% csrf_token %}<input type="hidden" name="action" value="{{ name }}"><button class="button {% if not forloop.first %}quiet{% endif %} full" type="submit" {% if name == 'close' %}data-confirm="Close this subscription? This cannot be undone."{% endif %}>{{ label }}</button>
+</form>{% endfor %}{% if can_invoice %}<form method="post" action="{% url 'subscription_action' workspace.pk subscription.pk %}">{% csrf_token %}<input type="hidden" name="action" value="invoice"><button class="button quiet full" type="submit">Create draft invoice</button>
+</form>{% endif %}</div>{% endif %}
+{% if invoices %}<h3>Invoices</h3>
+<ul class="plain-list">{% for invoice in invoices %}<li>
+<a href="{% url 'invoice_detail' workspace.pk invoice.pk %}">{{ invoice.label }}</a>
+<span>{{ invoice.total|inr }}</span>
+</li>{% endfor %}</ul>{% endif %}</aside>
+</div>{% endblock %}

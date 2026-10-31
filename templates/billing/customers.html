@@ -1,0 +1,40 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}Customers{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>Customers</h1>
+<p>The people and companies {{ workspace.name }} bills.</p>
+</div>
+<a class="button" href="{% url 'customer_create' workspace.pk %}">Add a customer</a>
+</div>
+<form class="search-row" method="get" role="search">
+<label for="id_q" class="visually-hidden">Search customers</label>
+<input type="search" name="q" id="id_q" value="{{ query }}" placeholder="Search by name or email" autocomplete="off">
+<button class="button quiet" type="submit">Search</button>{% if query %}<a href="{% url 'customers' workspace.pk %}">Clear</a>{% endif %}</form>
+{% if page.object_list %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Customers</caption>
+<thead>
+<tr>
+<th scope="col">Customer</th>
+<th scope="col">Phone</th>
+<th scope="col" class="num">Outstanding</th>
+</tr>
+</thead>
+<tbody>{% for customer in page %}<tr>
+<td>
+<a href="{% url 'customer_detail' workspace.pk customer.pk %}"><strong>{{ customer.name }}</strong></a>
+<span>{{ customer.email|default:'No email' }}</span>
+</td>
+<td data-label="Phone">{{ customer.phone|default:'None' }}</td>
+<td class="num" data-label="Outstanding">{{ customer.open_balance|inr }}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+{% include 'billing/pagination.html' %}{% elif query %}<section class="empty">
+<h2>No customers match “{{ query }}”</h2>
+<p>Check the spelling, or search by email instead.</p>
+<a href="{% url 'customers' workspace.pk %}">Show all customers</a>
+</section>{% else %}<section class="empty">
+<h2>No customers yet</h2>
+<p>Add a customer before preparing a quotation or invoice. Their details are copied onto each issued invoice.</p>
+<a href="{% url 'customer_create' workspace.pk %}">Add your first customer</a>
+</section>{% endif %}{% endblock %}

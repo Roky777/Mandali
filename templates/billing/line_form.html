@@ -1,0 +1,9 @@
+<form class="line-form" method="post" action="{{ action }}">{% csrf_token %}<div>
+<label for="id_item">{{ form.item.label }}</label>{{ form.item }}
+</div>
+<div class="quantity">
+<label for="id_quantity">{{ form.quantity.label }}</label>{{ form.quantity }}
+</div>
+<button class="button quiet" type="submit">Add line</button>
+</form>
+<p class="field-help">{{ help|default:"Prices and tax rates are copied from the catalog when the line is added." }}</p>
