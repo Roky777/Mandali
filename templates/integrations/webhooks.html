@@ -1,0 +1,39 @@
+{% extends 'base.html' %}{% block title %}Webhooks{% endblock %}{% block content %}{% include 'integrations/header.html' %}
+<section class="invite-strip">
+<div>
+<h2>Add a webhook endpoint</h2>
+<p>Mandali sends a signed POST to your website when an invoice is issued, paid, or cancelled, and when a payment is recorded or reversed. Failed deliveries are retried for about two days.</p>
+</div>
+<form method="post" novalidate>{% csrf_token %}<label for="id_url">{{ form.url.label }}</label>
+<div class="inline-form">
+<input type="url" name="url" id="id_url" maxlength="300" required placeholder="https://shop.example.com/mandali/events" value="{{ form.url.value|default:'' }}" {% if form.url.errors %}aria-invalid="true"{% endif %} {% if not api_enabled %}disabled{% endif %}>
+<button class="button" type="submit" {% if not api_enabled %}disabled{% endif %}>Add endpoint</button>
+</div>
+<div class="field-help {% if form.url.errors %}field-error{% endif %}" {% if form.url.errors %}role="alert"{% endif %}>{% if form.url.errors %}{{ form.url.errors }}{% else %}{{ form.url.help_text }}{% endif %}</div>
+</form>
+</section>
+{% if endpoints %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Webhook endpoints</caption>
+<thead>
+<tr>
+<th scope="col">Endpoint</th>
+<th scope="col">Added</th>
+<th scope="col">Status</th>
+</tr>
+</thead>
+<tbody>{% for endpoint in endpoints %}<tr>
+<td><a href="{% url 'integration_webhook' workspace.pk endpoint.pk %}"><strong class="url-text">{{ endpoint.url }}</strong></a></td>
+<td data-label="Added">{{ endpoint.created_at|date:'d M Y' }}</td>
+<td data-label="Status">{% if endpoint.is_active %}<span class="tag status-active">Receiving events</span>{% else %}<span class="tag status-closed">Paused</span>{% endif %}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% else %}<section class="empty">
+<h2>No webhook endpoints yet</h2>
+<p>Add one so your website learns when an invoice is paid, without checking Mandali.</p>
+</section>{% endif %}
+<section class="activity">
+<h2>Events</h2>
+<ul class="plain-list code-list">{% for event in events %}<li><span class="code">{{ event }}</span></li>{% endfor %}</ul>
+<p class="section-note">Each delivery carries Mandali-Event-Id, Mandali-Event-Type, and Mandali-Signature headers. The signature is an HMAC-SHA256 of the timestamp, a dot, and the raw body, made with the endpoint’s signing secret. Reject deliveries with a wrong signature or a timestamp older than five minutes, and ignore an event ID you have already processed.</p>
+</section>{% endblock %}

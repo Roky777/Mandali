@@ -127,6 +127,12 @@ The image starts two workers with four threads each, so a revision can hold abou
 
 Cloud Run revision and container filesystem changes never replace PostgreSQL migrations. Back up Cloud SQL and rehearse restoration before using real business data. The current foundation has no billing jobs. Add authenticated Cloud Tasks/Cloud Scheduler execution and idempotency when Part 5 introduces recurring billing; do not depend on web-instance memory or in-process timers.
 
+## Webhook retries
+
+Part 4 sends each webhook once, right after the billing change commits, from the web request. Retries need `python manage.py deliver_webhooks` to run on a schedule. The deploy helper does not create this yet. Create a Cloud Run job from the same image, runtime service account, Cloud SQL attachment, and pinned secrets as the web service, with the command `python manage.py deliver_webhooks`. Trigger it every five minutes from Cloud Scheduler using a dedicated identity that has only Cloud Run Invoker on that job. The command is safe to overlap: each delivery is leased with a conditional update before it is sent. Until the schedule exists, failed deliveries wait, and administrators can use **Send again** under Integrations.
+
+Webhook and website-sync requests leave from Cloud Run's default egress. Mandali refuses private, link-local, and metadata-server addresses on its own; do not route egress through a VPC connector that would make internal services reachable without reviewing that change.
+
 ## Local and CI verification
 
 ```bash

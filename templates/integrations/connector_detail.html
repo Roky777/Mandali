@@ -1,0 +1,38 @@
+{% extends 'base.html' %}{% block title %}{{ connector.name }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'integration_connectors' workspace.pk %}">Website sync</a>
+<h1>{{ connector.name }}</h1>
+<p class="url-text">{{ connector.url }}</p>
+</div>
+<a class="button quiet" href="{% url 'integration_connector_edit' workspace.pk connector.pk %}">Edit connection</a>
+</div>
+<div class="doc-grid action-first">
+<div>
+<dl class="essentials compact">
+<div>
+<dt>List path</dt>
+<dd><span class="code">{{ connector.list_path|default:'The response itself' }}</span></dd>
+</div>{% for label, path in mapping %}<div>
+<dt>{{ label }}</dt>
+<dd>{% if path %}<span class="code">{{ path }}</span>{% else %}<span class="muted">Not mapped</span>{% endif %}</dd>
+</div>{% endfor %}</dl>
+<section class="activity">
+<div class="section-heading">
+<h2>Sync history</h2>
+<span class="muted">Latest 20</span>
+</div>{% if runs %}<ul class="activity-list">{% for run in runs %}<li>
+<div>
+<a href="{% url 'integration_run' workspace.pk run.pk %}"><strong>{{ run.get_status_display }}</strong></a>
+<span>{% if run.error %}{{ run.error }}{% else %}{{ run.items|length }} record{{ run.items|length|pluralize }}{% endif %}</span>
+<span>By {{ run.created_by.first_name|default:run.created_by.email }}</span>
+</div>
+<time datetime="{{ run.created_at|date:'c' }}">{{ run.created_at|date:'d M Y, H:i' }} IST</time>
+</li>{% endfor %}</ul>{% else %}<p class="muted">No fetches yet. Fetch a preview to see what a sync would change.</p>{% endif %}</section>
+</div>
+<aside class="ledger" aria-label="Fetch a preview">
+<h2>Fetch a preview</h2>
+<form method="post" novalidate>{% csrf_token %}{% include 'core/fields.html' %}<button class="button full" type="submit" {% if not api_enabled %}disabled{% endif %}>Fetch preview</button>
+</form>
+<p class="field-help">Nothing is saved to your customers until you review and apply the preview.</p>
+</aside>
+</div>{% endblock %}

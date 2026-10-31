@@ -31,7 +31,8 @@
 <a {% if 'customer' in tab %}aria-current="page"{% endif %} href="{% url 'customers' workspace.pk %}">Customers</a>
 <a {% if 'subscription' in tab %}aria-current="page"{% endif %} href="{% url 'subscriptions' workspace.pk %}">Subscriptions</a>
 <a {% if 'invoice' in tab %}aria-current="page"{% endif %} href="{% url 'invoices' workspace.pk %}">Invoices</a>
-<a {% if 'catalog' in tab or 'product' in tab or 'template' in tab %}aria-current="page"{% endif %} href="{% url 'catalog_home' workspace.pk %}">Catalog</a>
+<a {% if 'catalog' in tab or 'product' in tab or 'template' in tab %}aria-current="page"{% endif %} href="{% url 'catalog_home' workspace.pk %}">Catalog</a>{% if is_admin %}
+<a {% if 'integration' in tab %}aria-current="page"{% endif %} href="{% url 'integration_keys' workspace.pk %}">Integrations</a>{% endif %}
 <a {% if request.resolver_match.url_name == 'team' %}aria-current="page"{% endif %} href="{% url 'team' workspace.pk %}">Team</a>{% if is_admin %}<a {% if request.resolver_match.url_name == 'workspace_settings' %}aria-current="page"{% endif %} href="{% url 'workspace_settings' workspace.pk %}">Settings</a>{% endif %}{% endwith %}</div>
 </div>
 </nav>{% endif %}

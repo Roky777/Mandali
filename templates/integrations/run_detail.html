@@ -1,0 +1,50 @@
+{% extends 'base.html' %}{% block title %}Sync preview{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'integration_connector' workspace.pk run.connector.pk %}">{{ run.connector.name }}</a>
+<h1>{% if run.status == 'preview' %}Review the sync{% else %}Sync {{ run.get_status_display|lower }}{% endif %}</h1>
+<p>Fetched {{ run.created_at|date:'d M Y, H:i' }} IST{% if run.applied_at %}, applied {{ run.applied_at|date:'d M Y, H:i' }} IST{% endif %}.</p>
+</div>{% if run.status == 'preview' %}<div class="heading-actions">
+<form method="post" action="{% url 'integration_run_action' workspace.pk run.pk %}">{% csrf_token %}<input type="hidden" name="action" value="discard"><button class="button quiet" type="submit">Discard</button>
+</form>
+<form method="post" action="{% url 'integration_run_action' workspace.pk run.pk %}">{% csrf_token %}<input type="hidden" name="action" value="apply"><button class="button" type="submit" {% if not counts.create and not counts.update %}disabled{% endif %} data-confirm="Apply this sync to your customers?">Apply {{ counts.create|add:counts.update }} change{{ counts.create|add:counts.update|pluralize }}</button>
+</form>
+</div>{% endif %}</div>
+{% if run.error %}<div class="notice error" role="alert">{{ run.error }}</div>{% endif %}
+<dl class="stat-row">
+<div>
+<dt>{% if run.status == 'applied' %}Added{% else %}New customers{% endif %}</dt>
+<dd>{{ counts.create }}</dd>
+</div>
+<div>
+<dt>{% if run.status == 'applied' %}Updated{% else %}Updates{% endif %}</dt>
+<dd>{{ counts.update }}</dd>
+</div>
+<div>
+<dt>Unchanged</dt>
+<dd>{{ counts.unchanged }}</dd>
+</div>
+<div>
+<dt>Skipped with problems</dt>
+<dd>{{ counts.error }}</dd>
+</div>
+</dl>
+{% if run.items %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Records</caption>
+<thead>
+<tr>
+<th scope="col">Customer ID</th>
+<th scope="col">Name</th>
+<th scope="col">Result</th>
+</tr>
+</thead>
+<tbody>{% for item in run.items %}<tr>
+<td><strong class="code">{{ item.external_id|default:'Missing' }}</strong></td>
+<td data-label="Name">{{ item.name|default:item.data.name|default:'None' }}<span>{{ item.data.email }}</span></td>
+<td data-label="Result">{% if item.action == 'error' %}<span class="tag status-overdue">Skipped</span>{% for message in item.errors %}<span>{{ message }}</span>{% endfor %}{% elif item.action == 'create' %}<span class="tag status-active">{% if run.status == 'applied' %}Added{% else %}Will be added{% endif %}</span>{% elif item.action == 'update' %}<span class="tag status-issued">{% if run.status == 'applied' %}Updated{% else %}Will be updated{% endif %}</span>{% else %}<span class="tag">Unchanged</span>{% endif %}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% elif not run.error %}<section class="empty">
+<h2>The list was empty</h2>
+<p>Your website returned no records. Check the list path if you expected customers.</p>
+</section>{% endif %}{% endblock %}

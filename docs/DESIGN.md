@@ -19,4 +19,10 @@ The signature surface is the invoice balance ledger, beside the lines: subtotal,
 
 Rendered with dummy data, Hallmark's `sloplint --scope app --render` reported 0 FAIL, 0 REFLEX, and 0 WARN across 17 billing screens after fixing a wrapping invoice number and a fourth font weight. Phone and desktop captures of the invoice, subscription, print, list, and form screens were reviewed by hand. A spacing gap in the payment panel and a wrapping section heading were fixed as a result. No finish-review subagent was run for this increment.
 
+## Part 4: integration screens
+
+Integrations is an administrator-only tab between Catalog and Team, with API keys, Webhooks, and Website sync as subtabs. Key and endpoint creation reuse the team invitation strip. Secrets appear once on a dedicated page, in the same pattern as invitation links. Codes, keys, and event names use the token monospace face, because they are literal values people copy. A curl example sits in a scrolling code block. The website sync preview is the signature: counts of what would be added, updated, unchanged, or skipped, then each record with its reason, and nothing changes until **Apply**. On phones, the fetch action sits above the sync history.
+
+Rendered with dummy data, `sloplint --scope app --render` reported 0 FAIL, 0 REFLEX, and 0 WARN across 26 screens, after replacing capitalised sample codes, straight apostrophes, and a wrapping settings link. Captures of the keys, webhook, sync, and preview screens were reviewed at desktop and phone widths. A run-together key prefix and history line were fixed as a result. No finish-review subagent was run.
+
 For future screens, use the existing tokens and interaction patterns. Keep invoice creation, checkout, API configuration, and gateway routing for their planned increments. Never present their selection during onboarding as an active integration.

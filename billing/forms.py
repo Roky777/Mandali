@@ -83,9 +83,11 @@ class TaxForm(ScopedForm):
 class ProductForm(ScopedForm):
     class Meta:
         model = Product
-        fields = ["name", "kind", "sales_price", "cost_price", "tax", "notes", "is_active"]
+        fields = ["name", "code", "kind", "sales_price", "cost_price", "tax", "notes", "is_active"]
+        help_texts = {"code": "Optional. Your website sends this code to add the product to an order."}
         labels = {
             "name": "Product name",
+            "code": "Product code (optional)",
             "kind": "Type",
             "sales_price": "Sales price (₹)",
             "cost_price": "Cost price (₹)",
@@ -117,6 +119,7 @@ class PlanForm(ScopedForm):
         model = Plan
         fields = [
             "name",
+            "code",
             "period",
             "price",
             "tax",
@@ -131,6 +134,7 @@ class PlanForm(ScopedForm):
         ]
         labels = {
             "name": "Plan name",
+            "code": "Plan code (optional)",
             "price": "Price per period (₹)",
             "tax": "Tax (optional)",
             "min_quantity": "Minimum quantity",
@@ -139,6 +143,7 @@ class PlanForm(ScopedForm):
         }
         widgets = {"available_from": DATE, "available_until": DATE}
         help_texts = {
+            "code": "Optional. Your website sends this code to start a subscription on this plan.",
             "can_renew": "Saved as plan policy. Renewals arrive with recurring billing.",
             "auto_close": "Saved as plan policy. Automatic closure arrives with recurring billing.",
         }
