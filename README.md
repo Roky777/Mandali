@@ -10,7 +10,7 @@
 
 Mandali puts plans, quotations, subscriptions, GST-ready invoices, payments, and revenue reports in one workspace. A business can bill by hand, share payment links and QR codes, or connect its website through an API. All three channels write to the same ledger.
 
-![Mandali overview: collections, outstanding, recurring value, and the overdue queue](docs/screenshots/overview.png)
+![Mandali overview: collections, outstanding, recurring value, and the overdue queue](docs/screenshots/app-overview.png)
 
 > Built for the *Subscription Management System* problem statement (the Brightloop Software scenario): replace spreadsheets, manual invoices, and missed renewals with one reliable system.
 
@@ -31,14 +31,14 @@ Mandali puts plans, quotations, subscriptions, GST-ready invoices, payments, and
 
 | | |
 | --- | --- |
-| ![Invoice with GST split, balance ledger, and reminder](docs/screenshots/invoice.png) | ![Revenue and acquisition analytics](docs/screenshots/analytics.png) |
+| ![Invoice with GST split, balance ledger, and reminder](docs/screenshots/app-invoice.png) | ![Revenue and acquisition analytics](docs/screenshots/app-analytics.png) |
 | **Invoice:** GST split, balance ledger, reminders, UPI and WhatsApp | **Analytics:** where revenue comes from, and what is working |
-| ![Invoice list with overdue reminders](docs/screenshots/invoices.png) | ![Reports with defined figures and CSV exports](docs/screenshots/reports.png) |
+| ![Invoice list with overdue reminders](docs/screenshots/app-invoices.png) | ![Reports with defined figures and CSV exports](docs/screenshots/app-reports.png) |
 | **Invoices:** filters, overdue tags, Remind, bank matching | **Reports:** every figure states what it counts |
-| ![Subscription lifecycle](docs/screenshots/subscription.png) | ![Gateway selection and routing history](docs/screenshots/routing.png) |
+| ![Subscription lifecycle](docs/screenshots/app-subscription.png) | ![Gateway selection and routing history](docs/screenshots/app-routing.png) |
 | **Subscription:** lifecycle and plan policies | **Gateway selection:** explained routing between two gateways |
 
-<p align="center"><img src="docs/screenshots/overview-mobile.png" width="280" alt="Mandali on a phone"></p>
+<p align="center"><img src="docs/screenshots/app-overview-mobile.png" width="280" alt="Mandali on a phone"></p>
 
 All screenshots use generated demo data.
 
