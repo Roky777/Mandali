@@ -1,0 +1,30 @@
+{% load billing %}<div class="data-table">
+<table class="lines">
+<caption class="visually-hidden">Lines</caption>
+<thead>
+<tr>
+<th scope="col">Item</th>
+<th scope="col" class="num">Quantity</th>
+<th scope="col" class="num">Unit price</th>
+<th scope="col">Tax</th>{% if show_discount %}
+<th scope="col" class="num">Discount</th>{% endif %}
+<th scope="col" class="num">Amount</th>{% if remove_url %}
+<th scope="col"><span class="visually-hidden">Actions</span></th>{% endif %}
+</tr>
+</thead>
+<tbody>{% for line in lines %}<tr>
+<td><strong>{{ line.description }}</strong></td>
+<td class="num" data-label="Quantity">{{ line.quantity }}</td>
+<td class="num" data-label="Unit price">{{ line.unit_price|inr }}</td>
+<td data-label="Tax">{% if line.tax_name %}{{ line.tax_name }}<span>{{ line.tax_rate|floatformat:"-2" }}%, {{ line.tax_amount|inr }}</span>{% else %}No tax{% endif %}</td>{% if show_discount %}
+<td class="num" data-label="Discount">{% if line.discount_amount %}-{{ line.discount_amount|inr }}{% else %}None{% endif %}</td>{% endif %}
+<td class="num" data-label="Amount"><strong>{{ line.total|inr }}</strong></td>{% if remove_url %}
+<td data-label="Actions">
+<form method="post" action="{% url remove_url workspace.pk parent.pk line.pk %}">{% csrf_token %}<button class="text-button" type="submit">Remove</button>
+</form>
+</td>{% endif %}
+</tr>{% empty %}<tr>
+<td colspan="7" class="empty-cell">No lines yet. Add a plan or product below to price this document.</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>

@@ -1,8 +1,8 @@
-{% extends 'base.html' %}{% block title %}{{ workspace.name }} overview{% endblock %}{% block content %}
+{% extends 'base.html' %}{% load billing %}{% block title %}{{ workspace.name }} overview{% endblock %}{% block content %}
 <div class="page-heading">
 <div>
 <h1>{{ workspace.name }}</h1>
-<p>Your business workspace is taking shape.</p>
+<p>Your business details, billing position, and recent activity.</p>
 </div>
 <span class="tag">{{ membership.get_role_display }}</span>
 </div>
@@ -27,18 +27,29 @@
 </div>
 <div>
 <dt>Billing channels selected</dt>
-<dd>{% if workspace.use_api %}<span>Website / API</span>{% endif %}{% if workspace.use_hosted %}<span>Links and QR codes</span>{% endif %}{% if workspace.use_manual %}<span>Manual billing</span>{% endif %}<small>Preferences saved for upcoming billing features</small>
+<dd>{% if workspace.use_api %}<span>Website / API</span>{% endif %}{% if workspace.use_hosted %}<span>Links and QR codes</span>{% endif %}{% if workspace.use_manual %}<span>Manual billing</span>{% endif %}<small>Manual billing is available. Other channels are planned.</small>
 </dd>
 </div>
 </dl>
 </section>
 <aside class="next-step">
-<h2>Make it your team’s workspace.</h2>
-<p>{% if is_admin %}Invite the people who will work with you. Only administrators can add or remove staff.{% else %}Your administrator manages access. You can view your business details and team here.{% endif %}</p>
-<a class="button" href="{% url 'team' workspace.pk %}">{% if is_admin %}Manage your team{% else %}View your team{% endif %}</a>
+<h2>Billing at a glance</h2>
+<dl class="stat-row stacked">
+<div>
+<dt>Outstanding</dt>
+<dd>{{ billing.outstanding|inr }}<small>{{ billing.open_count }} invoice{{ billing.open_count|pluralize }} awaiting payment</small>
+</dd>
+</div>
+<div>
+<dt>Overdue</dt>
+<dd>{{ billing.overdue|inr }}<small>{{ billing.overdue_count }} invoice{{ billing.overdue_count|pluralize }} past the due date</small>
+</dd>
+</div>
+</dl>
+<a class="button" href="{% url 'invoices' workspace.pk %}">Open invoices</a>
 <div class="next-part">
-<h3>Next: manual billing</h3>
-<p>Customer records, products, and invoices are coming next. Billing and payments are not enabled yet.</p>
+<h3>Next: links, QR codes, and payments</h3>
+<p>Manual billing is available now. Online collection is not enabled yet; record payments collected outside Mandali on each invoice.</p>
 </div>
 </aside>
 </div>

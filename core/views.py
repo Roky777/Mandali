@@ -24,6 +24,7 @@ from .forms import (
 )
 from .models import User, Workspace, Membership, Invitation, Activity
 from .security import rate_limit
+from billing.services import billing_summary
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +175,7 @@ def dashboard(request, membership):
             "activities": Activity.objects.filter(
                 workspace=membership.workspace
             ).select_related("actor")[:8],
+            "billing": billing_summary(membership.workspace, timezone.localdate()),
         }
     )
     return render(request, "core/dashboard.html", data)

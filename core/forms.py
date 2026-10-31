@@ -1,7 +1,7 @@
-import re
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import User, Workspace
+from .validators import clean_gstin
 
 
 class SignupForm(UserCreationForm):
@@ -59,18 +59,11 @@ class WorkspaceForm(forms.ModelForm):
             "website": "Saving a website does not connect its API.",
             "use_api": "API integration is planned. Your preference is saved.",
             "use_hosted": "Hosted checkout is planned. Your preference is saved.",
-            "use_manual": "Manual invoicing is planned. Your preference is saved.",
+            "use_manual": "Customers, quotations, invoices, and offline payments are available.",
         }
 
     def clean_gstin(self):
-        value = self.cleaned_data["gstin"].strip().upper()
-        if value and not re.fullmatch(
-            r"[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]", value
-        ):
-            raise forms.ValidationError(
-                "Use a 15-character GSTIN, for example 27ABCDE1234F1Z5."
-            )
-        return value
+        return clean_gstin(self.cleaned_data["gstin"])
 
     def clean(self):
         data = super().clean()

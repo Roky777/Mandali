@@ -1,4 +1,4 @@
-from django.urls import path, reverse_lazy
+from django.urls import include, path, reverse_lazy
 from django.contrib.auth import views as auth
 from core import views
 
@@ -46,5 +46,6 @@ urlpatterns = [
         views.remove_staff,
         name="remove_staff",
     ),
+    path("w/<uuid:workspace_id>/", include("billing.urls")),
     path("join/<str:token>/", views.accept_invite, name="accept_invite"),
 ]

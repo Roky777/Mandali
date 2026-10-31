@@ -1,0 +1,31 @@
+{% extends 'base.html' %}{% block title %}{{ template.name }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'catalog' workspace.pk 'templates' %}">Quotation templates</a>
+<h1>{{ template.name }}</h1>
+</div>
+<div class="heading-actions">{% if is_admin %}<a class="button quiet" href="{% url 'catalog_edit' workspace.pk 'templates' template.pk %}">Edit template</a>{% endif %}<a class="button" href="{% url 'subscription_create' workspace.pk %}">New quotation</a>
+</div>
+</div>
+<dl class="essentials compact">
+<div>
+<dt>Plan</dt>
+<dd>{{ template.plan|default:'One-time, no plan' }}</dd>
+</div>
+<div>
+<dt>Validity</dt>
+<dd>{{ template.validity_days }} days from the day a quotation is created</dd>
+</div>{% if template.notes %}<div>
+<dt>Notes for the customer</dt>
+<dd>{{ template.notes|linebreaksbr }}</dd>
+</div>{% endif %}</dl>
+<section class="activity">
+<div class="section-heading">
+<h2>Lines</h2>
+<span class="muted">Priced from the catalog when a quotation is created</span>
+</div>{% if lines %}<ul class="activity-list">{% for line in lines %}<li>
+<div>
+<strong>{% if line.plan %}{{ line.plan }}{% elif line.variant %}{{ line.variant.product.name }}: {{ line.variant.name }}{% else %}{{ line.product.name }}{% endif %}</strong>
+<span>Quantity {{ line.quantity }}</span>
+</div>{% if is_admin %}<form method="post" action="{% url 'template_line_remove' workspace.pk template.pk line.pk %}">{% csrf_token %}<button class="text-button" type="submit">Remove</button>
+</form>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">No lines yet. Add the plans and products this offer usually includes.</p>{% endif %}
+{% if is_admin %}{% include 'billing/line_form.html' with action='' help='Each quotation created from this template is priced from the catalog on that day.' %}{% endif %}</section>{% endblock %}

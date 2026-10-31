@@ -1,0 +1,39 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}Subscriptions{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<h1>Quotations and subscriptions</h1>
+<p>Each one moves from draft to quotation, confirmed, active, and closed.</p>
+</div>
+<a class="button" href="{% url 'subscription_create' workspace.pk %}">New quotation</a>
+</div>
+<nav class="subtabs" aria-label="Filter by status">
+<a href="{% url 'subscriptions' workspace.pk %}" {% if not status %}aria-current="page"{% endif %}>All</a>{% for value, label, count in filters %}<a href="?status={{ value }}" {% if status == value %}aria-current="page"{% endif %}>{{ label }} <span class="count">{{ count }}</span></a>{% endfor %}</nav>
+{% if page.object_list %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Quotations and subscriptions</caption>
+<thead>
+<tr>
+<th scope="col">Number</th>
+<th scope="col">Customer</th>
+<th scope="col">Plan</th>
+<th scope="col" class="num">Total per period</th>
+<th scope="col">Status</th>
+</tr>
+</thead>
+<tbody>{% for subscription in page %}<tr>
+<td><a class="doc-number" href="{% url 'subscription_detail' workspace.pk subscription.pk %}"><strong>{{ subscription.number }}</strong></a></td>
+<td data-label="Customer">{{ subscription.customer.name }}</td>
+<td data-label="Plan">{{ subscription.plan|default:'One-time' }}</td>
+<td class="num" data-label="Total">{{ subscription.total|inr }}</td>
+<td data-label="Status"><span class="tag status-{{ subscription.status }}">{{ subscription.get_status_display }}</span></td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+{% include 'billing/pagination.html' %}{% elif status %}<section class="empty">
+<h2>Nothing in this status</h2>
+<p>No quotation or subscription is currently in this state.</p>
+<a href="{% url 'subscriptions' workspace.pk %}">Show all</a>
+</section>{% else %}<section class="empty">
+<h2>No quotations yet</h2>
+<p>Prepare an offer for a customer. Once they confirm, activate it as a subscription and invoice it.</p>
+<a href="{% url 'subscription_create' workspace.pk %}">Prepare your first quotation</a>
+</section>{% endif %}{% endblock %}

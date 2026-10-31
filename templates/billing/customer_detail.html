@@ -1,0 +1,46 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}{{ customer.name }}{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'customers' workspace.pk %}">Customers</a>
+<h1>{{ customer.name }}</h1>
+</div>
+<div class="heading-actions">
+<a class="button quiet" href="{% url 'customer_edit' workspace.pk customer.pk %}">Edit details</a>
+<a class="button quiet" href="{% url 'subscription_create' workspace.pk %}?customer={{ customer.pk }}">New quotation</a>
+<a class="button" href="{% url 'invoice_create' workspace.pk %}?customer={{ customer.pk }}">New invoice</a>
+</div>
+</div>
+<dl class="essentials compact">
+<div>
+<dt>Contact</dt>
+<dd>{{ customer.email|default:'No email' }}<small>{{ customer.phone|default:'No phone' }}</small>
+</dd>
+</div>
+<div>
+<dt>Billing address</dt>
+<dd>{{ customer.billing_address|default:'Not provided'|linebreaksbr }}</dd>
+</div>
+<div>
+<dt>GSTIN</dt>
+<dd>{{ customer.gstin|default:'Not provided' }}</dd>
+</div>
+</dl>
+<section class="activity">
+<div class="section-heading">
+<h2>Invoices</h2>
+<span class="muted">Latest 20</span>
+</div>{% if invoices %}<ul class="activity-list">{% for invoice in invoices %}<li>
+<div>
+<a href="{% url 'invoice_detail' workspace.pk invoice.pk %}"><strong>{{ invoice.label }}</strong></a>
+<span>{{ invoice.total|inr }}{% if invoice.amount_paid %}, {{ invoice.balance|inr }} outstanding{% endif %}</span>
+</div>{% include 'billing/invoice_status.html' %}</li>{% endfor %}</ul>{% else %}<p class="muted">No invoices for this customer yet.</p>{% endif %}</section>
+<section class="activity">
+<div class="section-heading">
+<h2>Quotations and subscriptions</h2>
+<span class="muted">Latest 20</span>
+</div>{% if subscriptions %}<ul class="activity-list">{% for subscription in subscriptions %}<li>
+<div>
+<a href="{% url 'subscription_detail' workspace.pk subscription.pk %}"><strong>{{ subscription.number }}</strong></a>
+<span>{{ subscription.plan|default:'One-time quotation' }}, {{ subscription.total|inr }}</span>
+</div>
+<span class="tag status-{{ subscription.status }}">{{ subscription.get_status_display }}</span>
+</li>{% endfor %}</ul>{% else %}<p class="muted">No quotations for this customer yet.</p>{% endif %}</section>{% endblock %}

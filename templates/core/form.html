@@ -5,7 +5,12 @@
 <p>{{ description }}</p>{% if auth_form %}<div class="intro-note">
 <h2>One account. Your own workspace.</h2>
 <p>Keep your business details and team access together, ready for billing.</p>
-</div>{% else %}<dl class="simple-facts">
+</div>{% elif facts %}<dl class="simple-facts">{% for term, value in facts %}
+<div>
+<dt>{{ term }}</dt>
+<dd>{{ value }}</dd>
+</div>{% endfor %}
+</dl>{% else %}<dl class="simple-facts">
 <div>
 <dt>Currency</dt>
 <dd>Indian rupee (INR)</dd>
@@ -21,7 +26,7 @@
 </dl>{% endif %}</section>
 <section class="form-surface" aria-label="{{ title }}">
 <form method="post">{% csrf_token %}{% include 'core/fields.html' %}<div class="form-actions">
-<button class="button" type="submit">{{ submit }}</button>{% if workspace %}<a href="{% url 'dashboard' workspace.pk %}">Cancel</a>{% elif auth_form %}<a href="{% url 'login' %}">Already have an account?</a>{% else %}<a href="{% url 'workspaces' %}">Back to workspaces</a>{% endif %}</div>
+<button class="button" type="submit">{{ submit }}</button>{% if cancel_url %}<a href="{{ cancel_url }}">Cancel</a>{% elif workspace %}<a href="{% url 'dashboard' workspace.pk %}">Cancel</a>{% elif auth_form %}<a href="{% url 'login' %}">Already have an account?</a>{% else %}<a href="{% url 'workspaces' %}">Back to workspaces</a>{% endif %}</div>
 </form>
 </section>
 </div>{% endblock %}
