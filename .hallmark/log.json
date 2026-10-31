@@ -1,6 +1,22 @@
 [
   {
     "scope": "app",
+    "theme": "coral",
+    "shape": "app screen",
+    "axes": "light/grotesk-sans/warm",
+    "nav": "existing workspace sidebar",
+    "footer": "product utility line",
+    "imagery": "none; actual app screens",
+    "signature": "collections chart beside the overdue queue",
+    "sections": [
+      "palette only"
+    ],
+    "waived": [],
+    "prompt": "Mandali retheme: India-first subscription billing workspace; user disliked the blue theme",
+    "review": "deal 1/3 (Coral, fits billing, payments, invoicing); accent deepened to 52% lightness for text and button contrast; overview capture reviewed"
+  },
+  {
+    "scope": "app",
     "theme": "dose",
     "shape": "app screen",
     "axes": "light/system-sans/blue",

@@ -1,4 +1,4 @@
-/* Hallmark · shape: app screen · genre: modern-minimal · theme: existing Mandali blue and white
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Coral, shared tokens
  * signature: scoped invoice ledger beside buyer details · states: empty, error, pending, verified, unavailable · v2.0.0 */
 /* critique: preserve the existing ledger hierarchy; keep test status visible beside the amount. */
 .checkout-grid :is(a, button, input, textarea):focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
