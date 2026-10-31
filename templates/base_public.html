@@ -9,14 +9,16 @@
 <link rel="icon" href="{% static 'core/favicon.svg' %}">
 <link rel="stylesheet" href="{% static 'core/app.css' %}">
 <link rel="stylesheet" href="{% static 'checkout/checkout.css' %}">
+<link rel="stylesheet" href="{% static 'core/mesh.css' %}">
 <script src="{% static 'core/app.js' %}" defer>
 </script>{% block scripts %}{% endblock %}</head>
 <body>
+<div class="ambient-mesh" aria-hidden="true"></div>
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
 <div class="container topbar-inner">
 <span class="wordmark">
-<span class="mark" aria-hidden="true">m</span>mandali</span>
+<span class="mark" aria-hidden="true">{% include 'core/brand_mark.html' %}</span>mandali</span>
 {% block header_tag %}<span class="tag">Sandbox checkout</span>{% endblock %}
 </div>
 </header>
