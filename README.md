@@ -1,12 +1,16 @@
 # Mandali
 
-### Plans, subscriptions, and recurring billing in one place.
+### Automated and manual billing, with or without a website.
 
-Mandali is a subscription management platform being developed to bring the full subscription lifecycle into one workspace: product and plan configuration, quotations, recurring invoices, payment tracking, and revenue reporting.
+Mandali is an India-first invoicing and subscription billing platform being planned for businesses with or without a website. It brings products, plans, quotations, one-time and recurring invoices, payment tracking, and reporting into one workspace, with INR as the initial currency.
+
+Businesses with websites connect through authorized APIs. Businesses without websites share Mandali-hosted checkout links and QR codes with their customers. Both can also use manual billing and record externally collected payments. All channels use the same billing records.
 
 The project is based on the **Subscription Management System** hackathon problem statement and its Brightloop Software scenario, where spreadsheets, manual invoices, and missed renewals make running a subscription business difficult.
 
 > **Project status:** Planning stage. This README documents the intended product and requirements. Application code, technology choices, and setup instructions have not been added yet. Features below describe planned capabilities.
+
+See the [phased project plan](docs/PROJECT_PLAN.md) for the revised scope, acceptance criteria, and build order. We will implement and review one part at a time.
 
 ## Why Mandali?
 
@@ -18,6 +22,10 @@ Mandali aims to replace disconnected spreadsheets and manual billing work with a
 
 | Area | Scope |
 | --- | --- |
+| Business workspaces | Isolated merchant accounts, business settings, INR billing, and admin/staff permissions. |
+| Website integration | Authorized API data ingestion and fetching, field mapping, synchronization logs, and payment-status webhooks. |
+| Hosted links and QR codes | Shareable checkout and invoice-payment pages for businesses that do not have a website. |
+| Manual billing | Dashboard entry for customers, quotations, subscriptions, invoices, and externally collected payments. |
 | Accounts and access | Customer registration, email-based password resets, and role-based access for administrators, internal staff, and customers. |
 | Product catalog | Products with names, types, sales prices, cost prices, notes, and variants that can adjust pricing. |
 | Subscription plans | Daily, weekly, monthly, and yearly billing; plan pricing; minimum quantities; availability dates; and configurable closure, pause, and renewal policies. |
@@ -28,12 +36,15 @@ Mandali aims to replace disconnected spreadsheets and manual billing work with a
 | Payment tracking | Payments recorded against invoices with a method, amount, date, and note; visibility into paid and outstanding invoices. |
 | Customer portal | Customers can view and manage their own subscriptions and access their own invoices. |
 | Reporting | Filterable summaries of active subscriptions, revenue, payments, outstanding balances, and overdue invoices. |
+| Gateway selection | Explained recommendations, a merchant-selected default, and later opt-in routing across eligible connected gateways. |
+
+Automated invoice generation and automated payment collection are separate options. Recurring collection requires customer authorization and gateway support. Gateway recommendations consider eligibility, payment method, currency, costs, availability, and measured performance; merchants retain control.
 
 ## Who uses it?
 
 | Role | Intended access |
 | --- | --- |
-| Administrator | Controls the system, configures products, plans, taxes, and discounts, and is the only role allowed to add internal staff. |
+| Business administrator | Controls their business workspace, configures products, plans, taxes, and discounts, and is the only business role allowed to add internal staff. |
 | Internal staff | Handles day-to-day customer, quotation, subscription, invoice, and payment work within assigned permissions. |
 | Customer | Accesses only their own subscriptions and invoices through the customer portal. |
 
@@ -92,17 +103,24 @@ Eligible discounts should appear automatically on the next invoice and stop appl
 
 ## Development roadmap
 
-The following checklist organizes the problem statement into implementation milestones. It does not represent completed work.
+Each part has a reviewable result and acceptance criteria in the [project plan](docs/PROJECT_PLAN.md). All implementation parts remain pending.
 
-- [ ] Account registration, login, password recovery, and role-based access.
-- [ ] Product catalog, variants, and subscription plan configuration.
-- [ ] Quotation templates and subscription lifecycle management.
-- [ ] Recurring invoice generation and tax calculation.
-- [ ] Discount eligibility, expiry, and usage tracking.
-- [ ] Payment recording and outstanding invoice tracking.
-- [ ] Customer self-service portal.
-- [ ] Reporting, filters, and summary dashboards.
-- [ ] Billing correctness, access control, and performance validation.
+- [ ] **Part 1:** Foundation, business onboarding, access control, and design direction.
+- [ ] **Part 2:** Manual billing, customers, products, quotations, plans, taxes, and discounts.
+- [ ] **Part 3:** Hosted checkout, shareable links, QR codes, and one sandbox gateway.
+- [ ] **Part 4:** Website/API integration and synchronization.
+- [ ] **Part 5:** Recurring invoices, authorized collection, reminders, and recovery.
+- [ ] **Part 6:** Gateway recommendations, second integration, and automatic selection.
+- [ ] **Part 7:** Customer portal, reporting, refunds, and operational controls.
+- [ ] **Part 8:** Security audit, reliability checks, performance validation, and pilot release.
+
+## Design and security workflow
+
+- [Hallmark](https://github.com/nutlope/hallmark) will guide the interface design and browser review.
+- [Cloudflare security-audit skill](https://github.com/cloudflare/security-audit-skill) will guide structured security reviews of implemented code.
+- [OpenPay](https://www.getopenpay.com/) and [Chargebee](https://www.chargebee.com/) are product references for billing, hosted checkout, and routing workflows. Mandali will use its own design and implementation.
+
+The skills have been reviewed as planning inputs; installation, interface work, and code audits have not started. Security and correctness checks accompany every implementation part.
 
 ## Getting started
 
