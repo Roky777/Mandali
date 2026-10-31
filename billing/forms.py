@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 from django import forms
 from django.db.models import Q
@@ -43,6 +44,13 @@ class ScopedForm(forms.ModelForm):
                     current = Q(pk=getattr(self.instance, f"{name}_id"))
                 queryset = queryset.filter(Q(is_active=True) | current)
             field.queryset = queryset
+
+    def clean(self):
+        data = super().clean()
+        for key in ["utm_source", "utm_medium", "utm_campaign", "utm_content"]:
+            if key in data:
+                data[key] = data[key].strip().lower()
+        return data
 
 
 class CustomerForm(ScopedForm):
@@ -132,10 +140,12 @@ class VariantForm(forms.ModelForm):
 
 
 class PlanForm(ScopedForm):
+    price = forms.DecimalField(max_digits=12, decimal_places=2, min_value=0, required=False, label="Price per period (₹)", help_text="Leave blank to use the selected product sales price. After saving, the plan price is the billing price.")
     class Meta:
         model = Plan
         fields = [
             "name",
+            "product",
             "code",
             "period",
             "price",
@@ -167,6 +177,13 @@ class PlanForm(ScopedForm):
 
     def clean(self):
         data = super().clean()
+        if data.get("price") is None:
+            if data.get("product"):
+                data["price"] = data["product"].sales_price
+            else:
+                self.add_error("price", "Enter a plan price or choose a product to prefill it.")
+        if data.get("product") and not data.get("tax"):
+            data["tax"] = data["product"].tax
         start, end = data.get("available_from"), data.get("available_until")
         if start and end and end < start:
             self.add_error(
@@ -272,6 +289,7 @@ def item_choices(workspace):
 
 class LineForm(forms.Form):
     item = forms.ChoiceField(label="Plan or product")
+    variant = forms.ModelChoiceField(queryset=ProductVariant.objects.none(), required=False, label="Plan variant (optional)")
     quantity = forms.IntegerField(
         label="Quantity", min_value=1, max_value=100000, initial=1
     )
@@ -280,6 +298,7 @@ class LineForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.workspace = workspace
         self.fields["item"].choices = item_choices(workspace)
+        self.fields["variant"].queryset = ProductVariant.objects.filter(product__workspace=workspace, is_active=True, product__is_active=True)
 
     def clean_item(self):
         kind, _, pk = self.cleaned_data["item"].partition(":")
@@ -301,7 +320,16 @@ class LineForm(forms.Form):
 
     def clean(self):
         data = super().clean()
-        plan = (data.get("item") or {}).get("plan")
+        item = data.get("item") or {}
+        plan = item.get("plan")
+        if data.get("variant"):
+            if not plan:
+                self.add_error("variant", "Choose a plan to add a plan variant. For product variants select the product variant directly.")
+            elif plan.product_id and data["variant"].product_id != plan.product_id:
+                self.add_error("variant", "This variant does not belong to the plan product.")
+            else:
+                item["variant"] = data["variant"]
+                item["product"] = data["variant"].product
         quantity = data.get("quantity")
         if plan and quantity is not None and quantity < plan.min_quantity:
             self.add_error(
@@ -330,7 +358,12 @@ class SubscriptionForm(ScopedForm):
             "start_date",
             "expiry_date",
             "payment_terms_days",
+            "auto_invoice",
             "notes",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
         ]
         labels = {
             "plan": "Plan (optional for one-time quotations)",
@@ -351,6 +384,9 @@ class SubscriptionForm(ScopedForm):
         if self.instance.pk:
             del self.fields["template"]
         else:
+            self.fields["auto_invoice"].initial = True
+            self.fields["start_date"].initial = timezone.localdate
+            self.fields["valid_until"].initial = lambda: timezone.localdate() + timedelta(days=30)
             self.fields["template"].queryset = QuotationTemplate.objects.filter(
                 workspace=self.workspace, is_active=True
             )
@@ -367,7 +403,7 @@ class SubscriptionForm(ScopedForm):
 class InvoiceForm(ScopedForm):
     class Meta:
         model = Invoice
-        fields = ["customer", "payment_terms_days", "discount", "notes", "is_sandbox"]
+        fields = ["customer", "payment_terms_days", "discount", "notes", "is_sandbox", "utm_source", "utm_medium", "utm_campaign", "utm_content"]
         labels = {
             "discount": "Discount (optional)",
             "notes": "Notes for the customer (optional)",

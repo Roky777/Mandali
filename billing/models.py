@@ -114,6 +114,7 @@ class ProductVariant(models.Model):
 
 
 class Plan(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True, related_name="plans")
     class Period(models.TextChoices):
         DAILY = "daily", "Daily"
         WEEKLY = "weekly", "Weekly"
@@ -266,9 +267,14 @@ class Sequence(models.Model):
 
 
 class Subscription(models.Model):
+    utm_source = models.CharField("Acquisition source", max_length=100, blank=True, db_index=True)
+    utm_medium = models.CharField("Medium", max_length=100, blank=True)
+    utm_campaign = models.CharField("Campaign", max_length=100, blank=True, db_index=True)
+    utm_content = models.CharField("Ad / creative", max_length=100, blank=True)
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         QUOTATION = "quotation", "Quotation sent"
+        EXPIRED = "expired", "Quotation expired"
         CONFIRMED = "confirmed", "Confirmed"
         ACTIVE = "active", "Active"
         PAUSED = "paused", "Paused"
@@ -294,6 +300,8 @@ class Subscription(models.Model):
     payment_terms_days = models.PositiveIntegerField(
         "Payment terms (days)", default=15, validators=TERMS
     )
+    auto_invoice = models.BooleanField("Generate recurring invoices automatically on activation", default=False)
+    paused_on = models.DateField(null=True, blank=True)
     notes = models.TextField(max_length=500, blank=True)
     subtotal = models.DecimalField(**MONEY, default=ZERO)
     tax_total = models.DecimalField(**MONEY, default=ZERO)
@@ -305,6 +313,7 @@ class Subscription(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        indexes = [models.Index(fields=["workspace", "status"])]
         ordering = ["-created_at", "-id"]
         constraints = [
             models.UniqueConstraint(
@@ -321,6 +330,10 @@ class SubscriptionLine(PricedLine):
 
 
 class Invoice(models.Model):
+    utm_source = models.CharField("Acquisition source", max_length=100, blank=True, db_index=True)
+    utm_medium = models.CharField("Medium", max_length=100, blank=True)
+    utm_campaign = models.CharField("Campaign", max_length=100, blank=True, db_index=True)
+    utm_content = models.CharField("Ad / creative", max_length=100, blank=True)
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         ISSUED = "issued", "Issued"
@@ -385,6 +398,7 @@ class Invoice(models.Model):
     cancel_reason = models.CharField(max_length=200, blank=True)
 
     class Meta:
+        indexes = [models.Index(fields=["workspace", "status", "due_date"]), models.Index(fields=["workspace", "issue_date"])]
         ordering = ["-created_at", "-id"]
         constraints = [
             models.UniqueConstraint(
@@ -548,3 +562,27 @@ class Refund(models.Model):
         ordering = ["refunded_on", "id"]
         constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name="refund_positive")]
 
+
+
+class CampaignSpend(models.Model):
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
+    source = models.CharField(max_length=100)
+    campaign = models.CharField(max_length=100)
+    spent_on = models.DateField()
+    amount = models.DecimalField(**MONEY, validators=NOT_NEGATIVE)
+    class Meta:
+        ordering = ["-spent_on", "-pk"]
+        indexes = [models.Index(fields=["workspace", "spent_on"])]
+        constraints = [models.UniqueConstraint(fields=["workspace", "source", "campaign", "spent_on"], name="one_campaign_daily_spend")]
+
+
+class CheckoutVisit(models.Model):
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE)
+    link = models.ForeignKey("checkout.ShareLink", on_delete=models.CASCADE)
+    source = models.CharField(max_length=100, blank=True)
+    medium = models.CharField(max_length=100, blank=True)
+    campaign = models.CharField(max_length=100, blank=True)
+    content = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        indexes = [models.Index(fields=["workspace", "created_at"])]

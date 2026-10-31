@@ -1,0 +1,17 @@
+{% with tab=request.resolver_match.url_name %}
+<div class="nav-group"><span class="nav-group-label">Workspace</span>
+<a {% if tab == 'dashboard' %}aria-current="page"{% endif %} href="{% url 'dashboard' workspace.pk %}">{% include 'core/nav_icon.html' with icon='overview' %}Overview</a>
+<a {% if 'customer' in tab %}aria-current="page"{% endif %} href="{% url 'customers' workspace.pk %}">{% include 'core/nav_icon.html' with icon='customers' %}Customers</a>
+<a {% if 'subscription' in tab %}aria-current="page"{% endif %} href="{% url 'subscriptions' workspace.pk %}">{% include 'core/nav_icon.html' with icon='subscriptions' %}Subscriptions</a></div>
+<div class="nav-group"><span class="nav-group-label">Billing</span>
+<a {% if 'invoice' in tab %}aria-current="page"{% endif %} href="{% url 'invoices' workspace.pk %}">{% include 'core/nav_icon.html' with icon='invoices' %}Invoices</a>
+<a {% if 'checkout' in tab %}aria-current="page"{% endif %} href="{% url 'checkout_links' workspace.pk %}">{% include 'core/nav_icon.html' with icon='links' %}Payment links</a>
+<a {% if 'recurring' in tab %}aria-current="page"{% endif %} href="{% url 'recurring_overview' workspace.pk %}">{% include 'core/nav_icon.html' with icon='automation' %}Automation</a>
+{% if is_admin %}<a {% if tab == 'analytics' or tab == 'campaign_spend' %}aria-current="page"{% endif %} href="{% url 'analytics' workspace.pk %}">{% include 'core/nav_icon.html' with icon='analytics' %}Analytics</a>{% endif %}
+<a {% if 'report' in tab %}aria-current="page"{% endif %} href="{% url 'reports' workspace.pk %}">{% include 'core/nav_icon.html' with icon='reports' %}Reports</a></div>
+<div class="nav-group"><span class="nav-group-label">Manage</span>
+<a {% if 'catalog' in tab or 'product' in tab or 'template' in tab %}aria-current="page"{% endif %} href="{% url 'catalog_home' workspace.pk %}">{% include 'core/nav_icon.html' with icon='catalog' %}Catalog</a>
+{% if is_admin %}<a {% if 'integration' in tab %}aria-current="page"{% endif %} href="{% url 'integration_keys' workspace.pk %}">{% include 'core/nav_icon.html' with icon='links' %}Integrations</a>{% endif %}
+<a {% if tab == 'team' %}aria-current="page"{% endif %} href="{% url 'team' workspace.pk %}">{% include 'core/nav_icon.html' with icon='customers' %}Team</a>
+{% if is_admin %}<a {% if tab == 'workspace_settings' %}aria-current="page"{% endif %} href="{% url 'workspace_settings' workspace.pk %}">{% include 'core/nav_icon.html' with icon='settings' %}Settings</a>{% endif %}</div>
+{% endwith %}

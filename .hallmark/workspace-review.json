@@ -1,0 +1,80 @@
+{
+  "summary": {
+    "fails": 0,
+    "reflex": 0,
+    "warns": 5,
+    "waived": 2,
+    "rejected": 0,
+    "answered": 0,
+    "dismissed": 0,
+    "notes": 0,
+    "files": 11,
+    "render": "ran",
+    "kept": "kept: links 31/31, fields 16/16, script hooks 5/5, headings 16/19, figures 8/8; before 0 FAIL, 0 REFLEX, now 0 FAIL, 0 REFLEX"
+  },
+  "findings": [
+    {
+      "gate": "40",
+      "grade": "WARN",
+      "tier": "floor",
+      "file": "rendered-review/static/core/app.css",
+      "line": 22,
+      "evidence": "1.00:1 < 4.5:1 on .mark",
+      "fix": "Raise the contrast to threshold"
+    },
+    {
+      "gate": "F1",
+      "grade": "WARN",
+      "tier": "finish",
+      "file": "rendered-review/quotation.html",
+      "line": 87,
+      "evidence": "straight quote in prose x2 (first: pies the template's plan, lines,)",
+      "fix": "Use typographic quotes: \u201c \u201d \u2019"
+    },
+    {
+      "gate": "F4",
+      "grade": "WARN",
+      "tier": "finish",
+      "file": "rendered-review/static/core/app.css",
+      "line": 71,
+      "evidence": "2 filled primary-button recipes: .button + .button.quiet",
+      "fix": "One filled primary per page; demote the rest to outline/quiet variants"
+    },
+    {
+      "gate": "F7",
+      "grade": "WARN",
+      "tier": "finish",
+      "file": "rendered-review/static/core/app.css",
+      "line": 54,
+      "evidence": "same container recipe on 7 selectors (.form-surface, .ledger, .data-table, .collectio\u2026...)",
+      "fix": "Vary weight, radius, or fill by role; not every box is the same box"
+    },
+    {
+      "gate": "kept",
+      "grade": "WARN",
+      "tier": "floor",
+      "file": ".hallmark/before.json",
+      "line": 1,
+      "evidence": "headings gone or reworded since the before record: brightloop software, billing at a glance, next: links, qr codes, and payments",
+      "fix": "Restore it, or record it in the stamp: /* Hallmark \u00b7 reworded \"<old>\" to \"<new>\" \u00b7 <the gate that named it> */ or dropped <item> \u00b7 <the reason>"
+    },
+    {
+      "gate": "72",
+      "grade": "WAIVED",
+      "tier": "reflex",
+      "file": "rendered-review/analytics.html",
+      "line": 1,
+      "evidence": "[1440px] text crowds the edge of its box: details.panel bottom -204px",
+      "fix": "Pad the box: max(8px, 0.5em) at the sides, max(4px, 0.3em) above and below"
+    },
+    {
+      "gate": "72",
+      "grade": "WAIVED",
+      "tier": "reflex",
+      "file": "rendered-review/invoice.html",
+      "line": 1,
+      "evidence": "[1440px] text crowds the edge of its box: aside.ledger bottom -287px",
+      "fix": "Pad the box: max(8px, 0.5em) at the sides, max(4px, 0.3em) above and below"
+    }
+  ]
+}

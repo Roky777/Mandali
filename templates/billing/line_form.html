@@ -1,6 +1,7 @@
 <form class="line-form" method="post" action="{{ action }}">{% csrf_token %}<div>
 <label for="id_item">{{ form.item.label }}</label>{{ form.item }}
 </div>
+<div><label for="{{ form.variant.id_for_label }}">{{ form.variant.label }}</label>{{ form.variant }}{{ form.variant.errors }}</div>
 <div class="quantity">
 <label for="id_quantity">{{ form.quantity.label }}</label>{{ form.quantity }}
 </div>

@@ -47,6 +47,7 @@ def run(limit=100):
                     last_error=str(error)[:240]
                 )
                 counts["errors"] += 1
+        counts.update(services.maintain_terms())
         services.queue_due_notices()
         counts["emails"] = notices.deliver(limit=limit, deadline=started + 480)
         return counts
