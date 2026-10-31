@@ -11,4 +11,5 @@ staticfiles/
 .hallmark/browser/
 .hallmark/salt
 .hallmark/checkout-qa/
+.hallmark/recurring-qa/
 deploy/google-cloud/*.local.json

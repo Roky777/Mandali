@@ -52,5 +52,6 @@ urlpatterns = [
     path("", include("checkout.urls")),
     path("w/<uuid:workspace_id>/", include("integrations.urls")),
     path("api/v1/", include("integrations.api_urls")),
+    path("w/<uuid:workspace_id>/", include("recurring.urls")),
     path("join/<str:token>/", views.accept_invite, name="accept_invite"),
 ]

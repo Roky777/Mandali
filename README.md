@@ -8,7 +8,7 @@ Businesses with websites connect through authorized APIs. Businesses without web
 
 The project is based on the **Subscription Management System** hackathon problem statement and its Brightloop Software scenario, where spreadsheets, manual invoices, and missed renewals make running a subscription business difficult.
 
-> **Project status:** Parts 1 through 4 and Part 6 are implemented. Part 1 covers email-based accounts, password recovery, business onboarding, isolated workspaces, administrator/staff access, staff invitations, and business settings. Part 2 adds manual billing: customers, products and variants, plans, taxes, discounts, quotation templates, quotations and subscriptions, INR invoices, and offline payment recording with partial payments. Part 3 adds mobile checkout, product/plan and sandbox invoice links, QR downloads, and verified Razorpay Test payments. Part 4 adds website API keys, ingestion endpoints, customer sync, and signed outgoing webhooks. Part 6 adds Cashfree Sandbox as a second gateway, gateway recommendations, a default gateway, opt-in automatic routing with explanations, and manual overrides. Recurring automation and live collection remain planned. See [foundation setup](docs/FOUNDATION.md) and [manual billing](docs/BILLING.md), [sandbox checkout setup](docs/CHECKOUT.md), [API integration](docs/INTEGRATIONS.md), and [gateway routing](docs/GATEWAY_ROUTING.md).
+> **Project status:** Parts 1 through 6 are implemented. Part 1 covers email-based accounts, password recovery, business onboarding, isolated workspaces, administrator/staff access, staff invitations, and business settings. Part 2 adds manual billing: customers, products and variants, plans, taxes, discounts, quotation templates, quotations and subscriptions, INR invoices, and offline payment recording with partial payments. Part 3 adds mobile checkout, product/plan and sandbox invoice links, QR downloads, and verified Razorpay Test payments. Part 4 adds website API keys, ingestion endpoints, customer sync, and signed outgoing webhooks. Part 5 adds recurring invoices, email reminders, renewals, and customer-authorized Razorpay Test collection. Part 6 adds Cashfree Sandbox, gateway recommendations, and explained one-time routing. Live collection remains planned. See [foundation setup](docs/FOUNDATION.md) and [manual billing](docs/BILLING.md), [sandbox checkout setup](docs/CHECKOUT.md), [API integration](docs/INTEGRATIONS.md), [recurring billing](docs/RECURRING.md), and [gateway routing](docs/GATEWAY_ROUTING.md).
 
 See the [phased project plan](docs/PROJECT_PLAN.md) for the revised scope, acceptance criteria, and build order. We will implement and review one part at a time.
 
@@ -103,13 +103,13 @@ Eligible discounts should appear automatically on the next invoice and stop appl
 
 ## Development roadmap
 
-Each part has a reviewable result and acceptance criteria in the [project plan](docs/PROJECT_PLAN.md). Parts 1 through 4 are implemented; Parts 5 through 8 remain pending.
+Each part has a reviewable result and acceptance criteria in the [project plan](docs/PROJECT_PLAN.md). Parts 1 through 6 are implemented; Parts 7 and 8 remain pending.
 
 - [x] **Part 1:** Foundation, business onboarding, access control, and design direction.
 - [x] **Part 2:** Manual billing, customers, products, quotations, plans, taxes, and discounts.
 - [x] **Part 3:** Hosted checkout, shareable links, QR codes, and one sandbox gateway.
 - [x] **Part 4:** Website/API integration and synchronization.
-- [ ] **Part 5:** Recurring invoices, authorized collection, reminders, and recovery.
+- [x] **Part 5:** Recurring invoices, authorized collection, reminders, and recovery.
 - [x] **Part 6:** Gateway recommendations, second integration, and automatic selection.
 - [ ] **Part 7:** Customer portal, reporting, refunds, and operational controls.
 - [ ] **Part 8:** Security audit, reliability checks, performance validation, and pilot release.

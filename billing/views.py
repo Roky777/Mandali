@@ -477,6 +477,8 @@ def lifecycle(status):
 
 @workspace_access()
 def subscription_detail(request, membership, pk):
+    from recurring.models import Schedule
+
     subscription = get_object_or_404(
         Subscription.objects.select_related("customer", "plan", "template"),
         pk=pk,
@@ -487,22 +489,28 @@ def subscription_detail(request, membership, pk):
         for name, label in ACTIONS.items()
         if subscription.status in services.TRANSITIONS[name][0]
     ]
+    schedule = Schedule.objects.filter(subscription=subscription).first()
+    if schedule and schedule.mode == "automatic":
+        actions = []
     return render(
         request,
         "billing/subscription_detail.html",
         {
             **context(membership),
             "subscription": subscription,
+            "billing_schedule": schedule,
             "lines": subscription.lines.all(),
             "invoices": subscription.invoices.all(),
             "form": LineForm(workspace=membership.workspace),
             "actions": actions,
             "editable": subscription.status == Subscription.Status.DRAFT,
-            "can_invoice": subscription.status
+            "can_invoice": not schedule
+            and subscription.status
             in [Subscription.Status.CONFIRMED, Subscription.Status.ACTIVE],
             "lifecycle": lifecycle(subscription.status),
         },
     )
+
 
 
 @require_POST
@@ -632,20 +640,33 @@ def invoice_edit(request, membership, pk=None):
 
 
 def invoice_context(membership, invoice):
+    from recurring.models import Cycle
+
+    automatic_cycle = (
+        Cycle.objects.filter(invoice=invoice, schedule__mode="automatic")
+        .select_related("schedule")
+        .first()
+    )
     lines = list(invoice.lines.all())
     problem = None
     if invoice.status == Invoice.Status.DRAFT and invoice.discount:
-        problem = services.discount_problem(invoice.discount, lines, timezone.localdate())
+        problem = services.discount_problem(
+            invoice.discount, lines, timezone.localdate()
+        )
     payments = invoice.payments.select_related("recorded_by", "reversed_by")
     return {
         **context(membership),
         "invoice": invoice,
+        "automatic_cycle": automatic_cycle,
         "lines": lines,
         "payments": payments,
         "discount_problem": problem,
         "today": timezone.localdate(),
-        "remove_url": "invoice_line_remove" if invoice.status == Invoice.Status.DRAFT else "",
+        "remove_url": (
+            "invoice_line_remove" if invoice.status == Invoice.Status.DRAFT else ""
+        ),
     }
+
 
 
 @workspace_access()

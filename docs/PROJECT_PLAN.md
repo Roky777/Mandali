@@ -10,7 +10,7 @@ There are two business audiences: those with a website or application, and those
 
 Terminology: a **business** is a merchant using Mandali; a **customer** buys from that business. Every business owns an isolated workspace. Business administrators, staff, and end customers have different permissions. Platform administration must be separate from merchant administration.
 
-This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 3 is implemented with Razorpay Test only; see [checkout setup](CHECKOUT.md). Part 4 is implemented; see [API integration](INTEGRATIONS.md). Part 6 is implemented in sandbox with Cashfree as the second gateway; see [gateway routing](GATEWAY_ROUTING.md). Parts 5, 7, and 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
+This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 3 is implemented with Razorpay Test only; see [checkout setup](CHECKOUT.md). Part 4 is implemented; see [API integration](INTEGRATIONS.md). Part 5 is implemented; see [recurring billing](RECURRING.md). Part 6 adds sandbox gateway routing; see [gateway routing](GATEWAY_ROUTING.md). Parts 7 and 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
 
 ## Three ways to use the same billing system
 
@@ -69,6 +69,8 @@ A reusable plan checkout link creates a new checkout session for each customer. 
 **Build:** Activate the subscription lifecycle and plan-specific pause, renewal, and closure rules. Add reliable billing jobs, timezone-aware period calculation, invoice scheduling, eligible discount application, reminders, and bounded failure recovery. Add provider-supported recurring collection only after a customer authorizes an appropriate mandate. Provide invoice automation with customer-initiated payment as an option independent of auto-debit.
 
 **Reviewable result:** A due subscription produces exactly one invoice per billing period even when a job is retried. Pausing or closing a subscription prevents future scheduled billing as configured. Mandated collection, failed collection, cancellation, and manual intervention have explicit, tested outcomes.
+
+**Status:** Implemented with opt-in Mandali invoice scheduling, bounded recovery, calendar anchors, eligible configured discounts, SMTP notices, renewals, and provider-owned Razorpay Test collection after customer authorization. Live recurring payments and proration remain deferred.
 
 **Boundary:** Choose one scheduling authority for each subscription: Mandali or the provider. Never let both independently trigger the same charge. Existing paid invoices and completed periods are not regenerated when settings change.
 
@@ -135,4 +137,4 @@ Confirmed: India first, INR, businesses with or without websites, API plus hoste
 
 Stack selected for Part 1: Django 5.2 LTS with SQLite locally. Hosting is selected: Google Cloud Run, Cloud SQL PostgreSQL, Artifact Registry, and Secret Manager; see [deployment guide](GOOGLE_CLOUD.md). Still to select during later design: first supported website/API shape; live gateway merchant eligibility; supported business/tax scenarios; partial-payment policies; subscription upgrade/downgrade and proration rules; delivery provider; and business branding controls. Validate current provider capabilities, account access, and tax obligations at implementation time rather than hard-coding assumptions now.
 
-Parts 1 through 4 are implemented for review. Next implementation task after that review: Part 5 only. Continue to take each later part as a separate increment.
+Parts 1 through 6 are implemented for review. Next implementation task after that review: Part 7 only. Continue to take each later part as a separate increment.

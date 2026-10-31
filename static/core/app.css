@@ -303,3 +303,6 @@ input.code { font-family: var(--font-outlier); }
 }
 .privacy-note .field-help, section > .field-help { max-width: 70ch; }
 .check-group input[type=radio] { width: 20px; height: 20px; min-height: 0; padding: 0; flex-shrink: 0; accent-color: var(--color-accent); }
+
+/* Recurring billing: keep secondary cycle and delivery values readable. */
+.automation-page :is(td, .plain-list li) small { display: block; margin-top: var(--space-xs); }
