@@ -1,6 +1,6 @@
 # Mandali documentation
 
-Start with the task you are doing. The app keeps the existing theme, routes, and billing behavior.
+Start with the task you are doing. Mandali uses a shared Coral design system with light, dark, and system appearance preferences.
 
 ## Use the product
 
@@ -47,4 +47,4 @@ Keep feature URLs in their owning app. `config/urls.py` only connects those URL 
 - Open a staff invitation: **Team** stays selected.
 - Sign in as staff: Analytics, Integrations and Settings remain hidden and their existing backend restrictions remain in effect.
 
-No styling or database migration is needed for this cleanup.
+The interface includes a focused workspace picker, a shared logo, saved theme preferences, and a decorative pointer-responsive mesh. These presentation changes require no database migration.
