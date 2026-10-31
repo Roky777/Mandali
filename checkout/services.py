@@ -101,6 +101,14 @@ def create_link(workspace, user, data):
     ):
         raise CheckoutError("Choose one item from this workspace.")
     if data.get("invoice"):
+        from recurring.models import Cycle
+
+        if Cycle.objects.filter(
+            invoice=data["invoice"], schedule__mode="automatic"
+        ).exists():
+            raise CheckoutError(
+                "Automatic cycle invoices are collected by their authorized provider mandate. A separate payment link could create a duplicate charge."
+            )
         invoice = Invoice.objects.get(pk=data["invoice"].pk)
         if (
             not invoice.is_sandbox
@@ -557,6 +565,11 @@ def process_webhook(account, body, signature, event_id):
         return "duplicate"
     attempt = None
     entity = None
+    recurring_outcome = None
+    if event_type.startswith("subscription."):
+        from recurring.collection import process_event
+
+        recurring_outcome = process_event(account, payload)
     if event_type in ("payment.captured", "payment.authorized", "payment.failed"):
         try:
             supplied = payload["payload"]["payment"]["entity"]
@@ -597,7 +610,7 @@ def process_webhook(account, body, signature, event_id):
             ).exists()
         ):
             return "duplicate"
-        outcome = "ignored"
+        outcome = recurring_outcome or "ignored"
         if attempt and entity:
             result = apply_payment(attempt, entity)
             outcome = result.status

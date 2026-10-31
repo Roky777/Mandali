@@ -12,6 +12,7 @@ COPY core ./core
 COPY billing ./billing
 COPY checkout ./checkout
 COPY integrations ./integrations
+COPY recurring ./recurring
 COPY templates ./templates
 COPY static ./static
 COPY manage.py gunicorn.conf.py ./

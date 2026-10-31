@@ -10,6 +10,8 @@
 !checkout/**
 !integrations/
 !integrations/**
+!recurring/
+!recurring/**
 !templates/
 !templates/**
 !static/

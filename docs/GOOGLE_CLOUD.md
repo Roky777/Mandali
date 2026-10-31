@@ -157,3 +157,7 @@ Actual Cloud Run/Cloud SQL/SMTP integration and the ingress hop count still requ
 ## Sandbox checkout secrets (Part 3)
 
 See [checkout setup](CHECKOUT.md). Add the optional `payment_encryption_secret` deployment setting as a Secret Manager name and pinned numeric version. The runtime identity needs access; the migration identity does not. The helper binds it to `PAYMENT_ENCRYPTION_KEYS`. Gateway credentials are entered separately by each workspace administrator and encrypted in PostgreSQL. Include the `checkout` app when building the container (already included in Dockerfile and its allowlist). A deployed HTTPS smoke test with Razorpay Test credentials is still required.
+
+## Recurring worker (Part 5)
+
+The container includes the `recurring` app and `run_recurring` management command. After migrating and promoting the web release, deploy the separate single-task job using `scripts/deploy_recurring_job.py`, then configure an authenticated Cloud Scheduler trigger. The helper never starts billing or creates a trigger automatically. See [recurring setup and recovery](RECURRING.md) for identity, secret, scheduling, and rollback details.

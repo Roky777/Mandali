@@ -1,6 +1,6 @@
 # Part 2: manual billing
 
-This increment adds the shared billing core and its manual channel: customers, a catalog of taxes, products, variants, plans, discounts, and quotation templates, quotations that become subscriptions, one-time and subscription invoices in INR, and payments collected outside Mandali. Online collection, recurring scheduling, and the customer portal remain planned.
+This increment adds the shared billing core and its manual channel: customers, a catalog of taxes, products, variants, plans, discounts, and quotation templates, quotations that become subscriptions, one-time and subscription invoices in INR, and payments collected outside Mandali. Later increments add [sandbox checkout](CHECKOUT.md) and [recurring automation](RECURRING.md); the customer portal remains planned.
 
 Setup is unchanged from the [foundation](FOUNDATION.md). Run `python manage.py migrate` to create the `billing` tables.
 
@@ -54,7 +54,7 @@ These controls were designed for and tested on SQLite. Re-verify concurrency on 
 
 ## Not in this increment
 
-Recurring invoice scheduling, renewals, automatic closure, and billing-period duplicate prevention (Part 5; plan policies are stored and shown now). Online payments, payment links, and QR codes (Part 3). Customer portal, refunds, credit notes, and exports (Part 7). Sending invoices by email. Invoices are not tied to billing periods yet, so staff should avoid invoicing the same period twice by hand.
+Part 3 implements sandbox online payments, links, and QR codes. Part 5 adds opt-in recurring schedules, renewals, automatic closure, email notices, and billing-cycle uniqueness; see [recurring setup](RECURRING.md). Standalone manual drafts are not automatically assigned to billing periods. Customer portal, refunds, credit notes, and exports remain Part 7.
 
 ## Verification
 

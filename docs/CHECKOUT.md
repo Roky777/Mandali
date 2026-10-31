@@ -4,7 +4,7 @@ Mandali hosts a mobile checkout for a product, a plan's initial payment, or an i
 
 ## Configure a test gateway
 
-Only Razorpay **Test** keys (`rzp_test_…`) are accepted. Live collection, refunds, automatic renewal, and gateway routing are later parts. Test transactions create separate `TST` invoices and are excluded from the financial dashboard and real discount usage. Sandbox billing events do not send website fulfillment webhooks. API invoice representations include `is_sandbox` for clarity. An invoice created manually must have **Sandbox invoice** selected before issuing it to use checkout.
+Only Razorpay **Test** keys (`rzp_test_…`) are accepted. Live collection, refunds, and gateway routing are later parts. Part 5 adds a separate [authorized recurring flow](RECURRING.md). Test transactions create separate `TST` invoices and are excluded from the financial dashboard and real discount usage. Sandbox billing events do not send website fulfillment webhooks. API invoice representations include `is_sandbox` for clarity. An invoice created manually must have **Sandbox invoice** selected before issuing it to use checkout.
 
 1. Install requirements and run `python manage.py migrate` as in the main setup guide.
 2. Generate a dedicated encryption key locally with `python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'`. Keep it private. Set `PAYMENT_ENCRYPTION_KEYS` to that key in the server environment; there is no default. Set `MANDALI_BASE_URL` to the exact public origin (HTTPS in production). Existing links and credentials cannot be decrypted if the key is lost.
@@ -36,7 +36,7 @@ Changing gateway credentials creates a new account version. Preserve old provide
 
 The automated suite uses mocked provider responses for signature failures, retries, uncertain orders, captured/authorized states, tenant isolation, credential rotation, and ledger deduplication. Browser QA uses a separate local fixture server and dummy SDK; these fixtures are not shipped. A real Razorpay Test transaction and webhook delivery still need verification using the merchant's test account on the deployed HTTPS service. This is not live-payment readiness or a full security audit.
 
-Plan links collect an initial payment only and do not create an active recurring subscription or mandate. Catalog checkout collects billing details; an invoice-specific bearer link exposes that invoice's existing snapshots after checkout. Tax calculations reuse Part 2 and do not claim GST invoice compliance.
+These one-time plan links collect an initial payment only and do not create a recurring mandate. Use Part 5 automation for a separate customer-authorized recurring schedule. Catalog checkout collects billing details; an invoice-specific bearer link exposes that invoice's existing snapshots after checkout. Tax calculations reuse Part 2 and do not claim GST invoice compliance.
 
 ## Screenshots
 
