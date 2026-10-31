@@ -52,3 +52,8 @@ if (newPassword) {
   newPassword.addEventListener('input', update);
   update();
 }
+
+// Let the decorative background rest while this tab is not visible.
+const updateMeshMotion = () => document.body.classList.toggle('mesh-paused', document.hidden);
+document.addEventListener('visibilitychange', updateMeshMotion);
+updateMeshMotion();

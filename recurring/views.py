@@ -73,6 +73,7 @@ def setup(request, membership, pk):
             "title": f"Recurring billing for {sub.number}",
             "description": "Review the first date carefully: existing manual invoices are not imported into this schedule. Dates use Asia/Kolkata. The final partial term is charged at the full period price.",
             "submit": "Save billing schedule",
+            "cancel_url": reverse("subscription_detail", args=[membership.workspace.pk, sub.pk]),
         },
     )
 
@@ -190,6 +191,7 @@ def renew(request, membership, pk):
             "title": f"Renew {sub.number}",
             "description": "Extend the term at its existing snapshot price. A closed term resumes on its next billing boundary without charging the gap. Automatic terms need a new subscription and fresh authorization.",
             "submit": "Renew subscription",
+            "cancel_url": reverse("subscription_detail", args=[membership.workspace.pk, sub.pk]),
         },
     )
 

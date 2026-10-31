@@ -1,0 +1,56 @@
+/* Decorative moving mesh, using the current Mandali palette. */
+:root {
+  --mesh-line: color-mix(in oklab, var(--color-accent) 12%, transparent);
+  --mesh-wash: color-mix(in oklab, var(--color-accent) 9%, transparent);
+  --mesh-clear: transparent;
+}
+body { isolation: isolate; }
+.ambient-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: clip;
+  pointer-events: none;
+  contain: strict;
+}
+.ambient-mesh::before,
+.ambient-mesh::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  pointer-events: none;
+}
+.ambient-mesh::before {
+  background: radial-gradient(ellipse at 12% 20%, var(--mesh-wash), var(--mesh-clear) 58%),
+    radial-gradient(ellipse at 88% 82%, var(--mesh-wash), var(--mesh-clear) 55%);
+  animation: mesh-light 32s ease-in-out infinite alternate;
+}
+.ambient-mesh::after {
+  background-color: var(--mesh-line);
+  -webkit-mask: url('./mesh-grid.svg') center / cover no-repeat;
+  mask: url('./mesh-grid.svg') center / cover no-repeat;
+  animation: mesh-drift 26s ease-in-out infinite alternate;
+}
+@keyframes mesh-drift {
+  from { transform: translate3d(-2%, -1%, 0) rotate(-1deg) scale(1.04); }
+  to { transform: translate3d(2%, 2%, 0) rotate(1deg) scale(1.09); }
+}
+@keyframes mesh-light {
+  from { transform: translate3d(-2%, 1%, 0); opacity: .65; }
+  to { transform: translate3d(3%, -2%, 0); opacity: 1; }
+}
+.mesh-paused .ambient-mesh::before,
+.mesh-paused .ambient-mesh::after { animation-play-state: paused; }
+@media (max-width: 600px) {
+  .ambient-mesh::after { opacity: .7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient-mesh::before,
+  .ambient-mesh::after { animation: none; transform: none; }
+}
+@media print {
+  .ambient-mesh { display: none; }
+}
+
+.ambient-mesh canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.ambient-mesh.mesh-interactive::after { display: none; }

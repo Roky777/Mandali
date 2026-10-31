@@ -1,23 +1,37 @@
-{% extends 'base.html' %}{% block title %}Your workspaces{% endblock %}{% block content %}<div class="page-heading">
+{% extends 'base.html' %}{% load static %}{% block extra_styles %}<link rel="stylesheet" href="{% static 'core/workspace-picker.css' %}">{% endblock %}{% block title %}Your workspaces{% endblock %}{% block content %}
+<section class="workspace-picker" aria-labelledby="workspace-picker-title">
+<div class="workspace-picker-heading">
 <div>
-<h1>Your workspaces</h1>
-<p>Choose the business you want to work on.</p>
+<p class="workspace-eyebrow">Your business hub</p>
+<h1 id="workspace-picker-title">Your workspaces</h1>
+<p class="workspace-picker-description">Choose a business and pick up where you left off.</p>
 </div>
-<a class="button" href="{% url 'workspace_create' %}">Add a business</a>
+<a class="button" href="{% url 'workspace_create' %}"><span aria-hidden="true">+</span> Add a business</a>
 </div>
-{% if memberships %}<div class="workspace-list">{% for item in memberships %}<a class="workspace-row" href="{% url 'dashboard' item.workspace.pk %}">
+{% if memberships %}
+<div class="workspace-picker-label"><h2>Available to you</h2><span>{{ memberships|length }} workspace{{ memberships|length|pluralize }}</span></div>
+<div class="workspace-picker-list">
+{% for item in memberships %}
+<a class="workspace-choice" href="{% url 'dashboard' item.workspace.pk %}">
+<span class="workspace-choice-identity">
 <span class="business-initial" aria-hidden="true">{{ item.workspace.name|slice:':1' }}</span>
-<span class="business-text">
-<strong>{{ item.workspace.name }}</strong>
-<span>{{ item.workspace.legal_name }}</span>
+<span class="business-text"><strong>{{ item.workspace.name }}</strong>{% if item.workspace.legal_name %}<span>{{ item.workspace.legal_name }}</span>{% endif %}</span>
 </span>
-<span class="tag">{{ item.get_role_display }}</span>
-<span class="open-label">Open workspace</span>
-</a>{% endfor %}</div>{% else %}<section class="empty">
-<h2>A place for your business</h2>
-<p>Your account is ready. Add a business to set its billing details and invite your team.</p>
-<a href="{% url 'workspace_create' %}">Set up your first workspace</a>
-</section>{% endif %}<div class="privacy-note">
-<h2>Separate businesses. Separate access.</h2>
-<p>Each workspace has its own settings and team. Joining a team requires an invitation from its administrator.</p>
-</div>{% endblock %}
+<span class="workspace-choice-access"><span class="tag">{{ item.get_role_display }}</span><span class="workspace-choice-action">Open workspace <span aria-hidden="true">↗</span></span></span>
+</a>
+{% endfor %}
+</div>
+{% else %}
+<section class="workspace-picker-empty">
+<span class="business-initial" aria-hidden="true">{% include 'core/brand_mark.html' %}</span>
+<h2>Your next chapter starts here</h2>
+<p>Add your business to start managing customers, subscriptions, and invoices in one place.</p>
+<a class="button" href="{% url 'workspace_create' %}">Set up your first workspace <span aria-hidden="true">→</span></a>
+</section>
+{% endif %}
+<div class="workspace-access-note">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3 4 6v6c0 4 8 9 8 9s8-5 8-9V6l-8-3Z"/><path d="m8 12 3 3 5-6"/></svg>
+<div><h2>A separate space for every business</h2><p>Settings, billing, and team access stay within each workspace. To join a team, ask its administrator for an invitation.</p></div>
+</div>
+</section>
+{% endblock %}

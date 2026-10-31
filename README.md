@@ -81,6 +81,8 @@ flowchart LR
     Worker --> SMTP
 ```
 
+For setup guides, a code map, and a short manual walkthrough, see the [documentation index](docs/README.md).
+
 ### Apps
 
 | App | Responsibility |
@@ -257,16 +259,3 @@ The target is **Google Cloud Run + Cloud SQL PostgreSQL**, with Secret Manager f
 | [Release preparation](docs/RELEASE.md) | Security review, operations, manual checks |
 | [Requirements audit](docs/REQUIREMENTS_AUDIT.md) | Problem-statement coverage and walkthrough |
 | [Design](docs/DESIGN.md) | Interface direction with [Hallmark](https://github.com/nutlope/hallmark) |
-
-## Status
-
-- [x] Foundation: accounts, roles, workspaces
-- [x] Manual billing core
-- [x] Payment links, QR codes, Razorpay sandbox
-- [x] Website/API integration
-- [x] Recurring billing and automation
-- [x] Gateway recommendations and routing (Cashfree)
-- [x] Customer portal, reports, refunds
-- [ ] Release: live gateway verification, a backup restore drill, and a load test on production infrastructure
-
-Payments currently run in sandbox mode only. No real money moves.

@@ -2,23 +2,29 @@
 <html lang="en-IN">
 <head>
 <meta charset="utf-8">
+<script src="{% static 'core/theme.js' %}"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Your Mandali business workspace: manage your business details, team access, and billing preferences.">
 <title>{% block title %}Mandali{% endblock %} | Business workspace</title>
 <link rel="icon" type="image/svg+xml" href="{% static 'core/favicon.svg' %}">
 <link rel="stylesheet" href="{% static 'core/app.css' %}">
 <link rel="stylesheet" href="{% static 'core/workspace.css' %}">
+<link rel="stylesheet" href="{% static 'core/mesh.css' %}">
+<link rel="stylesheet" href="{% static 'core/theme.css' %}">
+{% block extra_styles %}{% endblock %}
+<script src="{% static 'core/mesh.js' %}" defer></script>
 <script src="{% static 'core/app.js' %}" defer>
 </script>
 </head>
 <body class="{% if workspace %}workspace-shell{% else %}public-shell{% endif %}">
+<div class="ambient-mesh" aria-hidden="true"></div>
 <a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
 <div class="container topbar-inner">
 <a class="wordmark" href="{% url 'workspaces' %}" aria-label="Mandali home">
-<span class="mark" aria-hidden="true">m</span>mandali<span class="wordmark-caption">Business workspace</span>
+<span class="mark" aria-hidden="true">{% include 'core/brand_mark.html' %}</span>mandali<span class="wordmark-caption">Business workspace</span>
 </a>
-<div class="account-nav">{% if user.is_authenticated %}<a href="{% url 'portal_request' %}">Customer portal</a><span class="account-name">{{ user.first_name|default:user.email }}</span>
+<div class="account-nav">{% include 'core/theme_picker.html' %}{% if user.is_authenticated %}<a href="{% url 'portal_request' %}">Customer portal</a><span class="account-name">{{ user.first_name|default:user.email }}</span>
 <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit" class="text-button">Sign out</button>
 </form>{% else %}{% if request.resolver_match.url_name == 'login' %}<a href="{% url 'signup' %}" class="button quiet">Create account</a>{% else %}<a href="{% url 'login' %}">Sign in</a>{% endif %}{% endif %}</div>
 </div>
