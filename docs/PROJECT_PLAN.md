@@ -10,7 +10,7 @@ There are two business audiences: those with a website or application, and those
 
 Terminology: a **business** is a merchant using Mandali; a **customer** buys from that business. Every business owns an isolated workspace. Business administrators, staff, and end customers have different permissions. Platform administration must be separate from merchant administration.
 
-This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 3 is implemented with Razorpay Test only; see [checkout setup](CHECKOUT.md). Part 4 is implemented; see [API integration](INTEGRATIONS.md). Parts 5 through 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
+This document is a proposed implementation sequence. Part 1 is implemented with Django 5.2 LTS and SQLite for local development; see [foundation documentation](FOUNDATION.md). Part 2 is implemented; see [manual billing documentation](BILLING.md). Part 3 is implemented with Razorpay Test only; see [checkout setup](CHECKOUT.md). Part 4 is implemented; see [API integration](INTEGRATIONS.md). Part 6 is implemented in sandbox with Cashfree as the second gateway; see [gateway routing](GATEWAY_ROUTING.md). Parts 5, 7, and 8 remain planned. Each part gets its own detailed design, implementation, verification, and review before moving to the next. Do not build all parts at once.
 
 ## Three ways to use the same billing system
 
@@ -77,6 +77,8 @@ A reusable plan checkout link creates a new checkout session for each customer. 
 **Build:** Integrate a second eligible gateway. Offer a recommendation during onboarding, a merchant-selected default, and an opt-in automatic routing policy. Filter by connected and enabled merchant account, supported method, currency, transaction type, recurring capability, amount limits, and token/mandate compatibility before ranking eligible options. Rank by configured priorities such as estimated effective fees, settlement needs, current availability, and measured payment success. Explain each recommendation and preserve manual override and routing history.
 
 **Reviewable result:** The same eligible payment is routed predictably under a saved policy, with an explanation. An incompatible gateway is never selected. A merchant can change the default or disable automatic selection. Missing performance data is shown as unknown, with a deterministic default.
+
+**Status:** Implemented in sandbox. Cashfree is the second gateway. Fees, limits, and settlement times are entered by the merchant, and success rates are measured from the business's own orders. Real provider verification on a deployed HTTPS service is still required.
 
 **Boundary:** There is no universally best gateway. Recommendations require current, merchant-specific inputs; no invented fees or success-rate claims. Automatic selection cannot open or approve a merchant account. Do not assume tokens or mandates can move between providers. On a timeout, reconcile the original attempt before considering a new charge; fallback is allowed only after a definitive safe failure and with a compatible payment authorization.
 

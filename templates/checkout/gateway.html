@@ -1,22 +1,31 @@
-{% extends 'base.html' %}{% block title %}Sandbox gateway{% endblock %}{% block content %}<div class="page-heading">
+{% extends 'base.html' %}{% block title %}{{ provider.label }}{% endblock %}{% block content %}<div class="page-heading">
 <div>
-<h1>Sandbox gateway</h1>
-<p>Connect this business to Razorpay Test. Live keys are rejected.</p>
+<a class="back-link" href="{% url 'checkout_links' workspace.pk %}">Links and payments</a>
+<h1>Payment gateways</h1>
+<p>Connect sandbox accounts. Production keys are rejected.</p>
 </div>
-<a href="{% url 'checkout_links' workspace.pk %}">Back to links</a>
-</div>{% if gateway %}<section class="privacy-note">
-<h2>Current connection</h2>
-<p>Key ID: {{ gateway.key_id }}</p>
+</div>
+{% include 'checkout/gateway_nav.html' %}
+{% if gateway %}<section class="privacy-note">
+<h2>{{ provider.label }} is connected</h2>
+<p>{% if provider == 'cashfree' %}App ID{% else %}Key ID{% endif %}: <span class="code">{{ gateway.key_id }}</span></p>
 <label for="webhook-url">Webhook URL</label>
-<input id="webhook-url" value="{{ webhook_url }}" readonly>
-<p class="field-help">In Razorpay Test, subscribe to payment.captured, payment.authorized, and payment.failed. Use the same webhook secret entered below. Keep old webhook configurations active until their pending orders are reconciled.</p>
-<form method="post" action="{% url 'checkout_gateway_disable' workspace.pk %}">{% csrf_token %}<button class="text-button" type="submit" data-confirm="Disable new orders? Existing payment evidence remains verifiable.">Disable new orders</button>
+<input id="webhook-url" class="code" value="{{ webhook_url }}" readonly>
+<p class="field-help">{% if provider == 'cashfree' %}In the Cashfree Sandbox dashboard, add this URL as a payment webhook for API version 2023-08-01 and subscribe to payment success, failure, and user-dropped events. Cashfree signs it with your secret key.{% else %}In Razorpay Test, subscribe to payment.captured, payment.authorized, and payment.failed. Use the same webhook secret entered below.{% endif %} Keep old webhook configurations active until their pending orders are reconciled.</p>
+<form method="post" action="{% url 'checkout_gateway_disable' workspace.pk %}">{% csrf_token %}<input type="hidden" name="provider" value="{{ provider }}"><button class="text-button" type="submit" data-confirm="Stop new orders on this gateway? Existing payment evidence remains verifiable.">Disable new orders</button>
 </form>
-</section>{% endif %}<div class="form-layout">
-<section class="form-intro">
-<h2>{% if gateway %}Replace credentials{% else %}Connect Razorpay Test{% endif %}</h2>
-<p>Secrets are encrypted before storage. Replacing credentials creates a new version; previous orders retain their original configuration.</p>
+</section>{% endif %}
+<section class="activity">
+<div class="section-heading">
+<h2>Account details</h2>
+<a href="{% url 'checkout_gateway_profile' workspace.pk provider %}">{% if profile %}Edit details{% else %}Add details{% endif %}</a>
+</div>
+<p class="section-note">{% if profile %}Fees, limits, methods, and settlement time you entered for this account are used to explain recommendations and automatic routing.{% else %}Add the fees, limits, and methods from your own {{ provider.label }} contract so Mandali can compare gateways. Until then, they are shown as unknown.{% endif %}</p>
 </section>
+<div class="form-layout">
+<section class="form-intro">
+<h2>{% if gateway %}Replace credentials{% else %}Connect {{ provider.label }}{% endif %}</h2>
+<p>Secrets are encrypted before storage. Replacing credentials creates a new version; previous orders retain their original configuration.</p>{% if provider == 'cashfree' %}<p class="field-help">Cashfree requires a customer phone number, so it is skipped for payments without one.</p>{% endif %}</section>
 <section class="form-surface">
 <form method="post">{% csrf_token %}{% include 'core/fields.html' %}<button class="button" type="submit">Save test connection</button>
 </form>

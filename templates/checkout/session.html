@@ -1,5 +1,6 @@
-{% extends 'base_public.html' %}{% load static billing %}{% block title %}{% if attempt.payment_id %}Sandbox receipt{% else %}Review payment{% endif %}{% endblock %}{% block scripts %}{% if gateway_options %}<script src="https://checkout.razorpay.com/v1/checkout.js" defer>
-</script>
+{% extends 'base_public.html' %}{% load static billing %}{% block title %}{% if attempt.payment_id %}Sandbox receipt{% else %}Review payment{% endif %}{% endblock %}{% block scripts %}{% if gateway_options %}{% if cashfree_checkout %}<script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer>
+</script>{% else %}<script src="https://checkout.razorpay.com/v1/checkout.js" defer>
+</script>{% endif %}
 <script src="{% static 'checkout/pay.js' %}" defer>
 </script>{% endif %}{% endblock %}{% block content %}<div class="page-heading">
 <div>
@@ -46,13 +47,13 @@
 <dt>Remaining</dt>
 <dd>{{ invoice.balance|inr }}</dd>
 </div>
-</dl>{% if attempt.payment_id %}<p>Sandbox capture verified. No real money moved.</p>{% elif gateway_options %}<p>Razorpay Test will collect test payment details. Never enter real payment details here.</p>{{ gateway_options|json_script:'gateway-options' }}<button class="button full" id="pay-button" type="button">Pay {{ attempt.amount_paise|rupees_from_paise }} in sandbox</button>
+</dl>{% if attempt.payment_id %}<p>Sandbox capture verified. No real money moved.</p>{% elif gateway_options %}<p>{{ attempt.gateway.get_provider_display }} will collect test payment details. Never enter real payment details here.</p>{{ gateway_options|json_script:'gateway-options' }}<button class="button full" id="pay-button" type="button">Pay {{ attempt.amount_paise|rupees_from_paise }} in sandbox</button>
 <p class="field-help" id="payment-feedback" role="status">
 </p>
-<form id="verify-payment" method="post" action="{% url 'checkout_verify' token %}">{% csrf_token %}<input type="hidden" name="razorpay_payment_id">
+{% if not cashfree_checkout %}<form id="verify-payment" method="post" action="{% url 'checkout_verify' token %}">{% csrf_token %}<input type="hidden" name="razorpay_payment_id">
 <input type="hidden" name="razorpay_order_id">
 <input type="hidden" name="razorpay_signature">
-</form><form method="post" action="{% url 'checkout_status' token %}">{% csrf_token %}<button class="button quiet" type="submit">Check payment status</button>
+</form>{% endif %}<form id="status-form" method="post" action="{% url 'checkout_status' token %}">{% csrf_token %}<button class="button quiet" type="submit">Check payment status</button>
 </form>{% elif attempt %}<p>
 <strong>{{ attempt.get_status_display }}</strong>
 </p>

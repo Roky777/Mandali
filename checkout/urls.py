@@ -9,7 +9,37 @@ urlpatterns = [
         name="checkout_gateway",
     ),
     path(
-        "w/<uuid:workspace_id>/checkout/gateway/disable/",
+        "w/<uuid:workspace_id>/checkout/gateway/<str:provider>/",
+        views.gateway_settings,
+        name="checkout_gateway_provider",
+    ),
+    path(
+        "w/<uuid:workspace_id>/checkout/gateway/<str:provider>/details/",
+        views.gateway_profile,
+        name="checkout_gateway_profile",
+    ),
+    path(
+        "w/<uuid:workspace_id>/checkout/routing/",
+        views.routing_overview,
+        name="checkout_routing",
+    ),
+    path(
+        "w/<uuid:workspace_id>/checkout/routing/policy/",
+        views.routing_policy,
+        name="checkout_routing_policy",
+    ),
+    path(
+        "w/<uuid:workspace_id>/checkout/routing/override/",
+        views.routing_override,
+        name="checkout_routing_override",
+    ),
+    path(
+        "w/<uuid:workspace_id>/checkout/routing/override/<int:pk>/remove/",
+        views.routing_override_remove,
+        name="checkout_routing_override_remove",
+    ),
+    path(
+        "w/<uuid:workspace_id>/checkout/disable/",
         views.gateway_disable,
         name="checkout_gateway_disable",
     ),
@@ -59,5 +89,11 @@ urlpatterns = [
         "webhooks/razorpay-test/<uuid:account_id>/",
         views.webhook,
         name="checkout_webhook",
+    ),
+    path(
+        "webhooks/cashfree-sandbox/<uuid:account_id>/",
+        views.webhook,
+        {"provider": "cashfree"},
+        name="checkout_webhook_cashfree",
     ),
 ]

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}{% load billing %}{% block title %}Gateway selection{% endblock %}{% block content %}<div class="page-heading">
+<div>
+<a class="back-link" href="{% url 'checkout_links' workspace.pk %}">Links and payments</a>
+<h1>Payment gateways</h1>
+<p>Choose how each payment picks a gateway, and see why it was chosen.</p>
+</div>
+</div>
+{% include 'checkout/gateway_nav.html' %}
+<section>
+<h2 class="visually-hidden">Gateways compared</h2>
+<div class="data-table">
+<table>
+<caption class="visually-hidden">Gateways compared</caption>
+<thead>
+<tr>
+<th scope="col">Gateway</th>
+<th scope="col">Connection</th>
+<th scope="col">Fee from your contract</th>
+<th scope="col">Settlement</th>
+<th scope="col">Methods</th>
+<th scope="col">Measured success</th>
+</tr>
+</thead>
+<tbody>{% for gateway in gateways %}<tr>
+<td><strong>{{ gateway.label }}</strong>{% if gateway.is_default %}<span>Default</span>{% endif %}<span><a href="{% url 'checkout_gateway_profile' workspace.pk gateway.provider %}">{% if gateway.profile %}Edit details{% else %}Add details{% endif %}</a></span></td>
+<td data-label="Connection">{% if gateway.connected %}<span class="tag status-active">Connected</span>{% else %}<a href="{% url 'checkout_gateway_provider' workspace.pk gateway.provider %}">Connect</a>{% endif %}</td>
+<td data-label="Fee">{% if gateway.profile.fee_percent is not None %}{{ gateway.profile.fee_percent|floatformat:"-2" }}% + {{ gateway.profile.fee_fixed|inr }}{% else %}<span class="muted">Unknown</span>{% endif %}</td>
+<td data-label="Settlement">{% if gateway.profile.settlement_days is not None %}{{ gateway.profile.settlement_days }} day{{ gateway.profile.settlement_days|pluralize }}{% else %}<span class="muted">Unknown</span>{% endif %}</td>
+<td data-label="Methods">{% if gateway.profile.methods %}{% for method in gateway.profile.methods %}{% for key, label in method_labels.items %}{% if key == method %}{{ label }}{% endif %}{% endfor %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="muted">Not entered</span>{% endif %}</td>
+<td data-label="Measured success">{% if gateway.rate %}{{ gateway.rate.rate }}%<span>Paid of {{ gateway.rate.sample }} orders, last 30 days</span>{% else %}<span class="muted">Unknown</span><span>Needs {{ min_sample }} orders in 30 days</span>{% endif %}</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+<p class="field-help">Mandali never supplies fees or success rates. Fees come from the details you enter; success is measured from this business’s own sandbox orders.</p>
+</section>
+<div class="form-layout routing-forms">
+<section class="form-intro">
+<h2>Routing policy</h2>
+<p>Automatic selection first removes any gateway that cannot take the payment: not connected, unusable credentials, outside your amount limits, or missing a phone number Cashfree needs. It then ranks the rest by your preference. Unknown figures rank last. Ties go to the default.</p>
+<p class="field-help">After a gateway definitively rejects an order, automatic mode may try the next one. An uncertain order is always reconciled first and never replaced.</p>
+</section>
+<section class="form-surface">
+<form method="post" action="{% url 'checkout_routing_policy' workspace.pk %}">{% csrf_token %}{% with form=policy_form %}{% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}<fieldset class="check-group field">
+<legend>{{ form.mode.label }}</legend>{% for option in form.mode %}<div class="check-line">{{ option.tag }}<label for="{{ option.id_for_label }}">{{ option.choice_label }}</label>
+</div>{% endfor %}</fieldset>
+<div class="field">
+<label for="{{ form.default_provider.id_for_label }}">{{ form.default_provider.label }}</label>{{ form.default_provider }}{% if form.default_provider.errors %}<div class="field-help field-error" role="alert">{{ form.default_provider.errors }}</div>{% endif %}</div>
+<div class="field">
+<label for="{{ form.priority.id_for_label }}">{{ form.priority.label }}</label>{{ form.priority }}</div>{% endwith %}<button class="button" type="submit">Save policy</button>
+</form>
+</section>
+</div>
+<section class="activity">
+<h2>Get a recommendation</h2>
+<p class="section-note">Describe what your customers need. Mandali compares it with the account details you entered for each gateway.</p>
+<form class="recommend-form" method="get">{% with form=recommend_form %}<fieldset class="check-group">
+<legend>{{ form.methods.label }}</legend>{% for option in form.methods %}<div class="check-line">{{ option.tag }}<label for="{{ option.id_for_label }}">{{ option.choice_label }}</label>
+</div>{% endfor %}</fieldset>
+<div>
+<div class="check-line">{{ form.recurring }}<label for="{{ form.recurring.id_for_label }}">{{ form.recurring.label }}</label>
+</div>
+<div class="field">
+<label for="{{ form.amount.id_for_label }}">{{ form.amount.label }}</label>{{ form.amount }}{% if form.amount.errors %}<div class="field-help field-error" role="alert">{{ form.amount.errors }}</div>{% endif %}</div>
+<div class="field">
+<label for="{{ form.priority.id_for_label }}">{{ form.priority.label }}</label>{{ form.priority }}</div>
+<button class="button quiet" type="submit">Recommend</button>
+</div>{% endwith %}</form>
+{% if recommendation %}<ol class="recommendation">{% for row in recommendation %}<li>
+<div>
+<strong>{{ row.label }}</strong>
+<span>{% if row.fits %}Fits what you described{% elif row.misses %}{{ row.misses|join:'. ' }}{% else %}{{ row.gaps|join:'. ' }}{% endif %}</span>
+<span>{{ row.figure|capfirst }}{% if not row.connected %}. Not connected yet{% endif %}</span>
+</div>{% if forloop.first and row.fits %}<span class="tag status-active">Recommended</span>{% endif %}</li>{% endfor %}</ol>
+<p class="field-help">A recommendation uses only what you entered and what Mandali measured. It cannot open or approve a gateway account.</p>{% endif %}</section>
+<section class="activity">
+<h2>Manual overrides</h2>
+<p class="section-note">Pin one sandbox invoice to a gateway. If that gateway cannot take the payment, nothing is routed elsewhere.</p>
+<form class="override-form" method="post" action="{% url 'checkout_routing_override' workspace.pk %}" novalidate>{% csrf_token %}{% with form=override_form %}{% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<div>
+<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="field-help field-error" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endfor %}{% endwith %}<button class="button quiet" type="submit">Set override</button>
+</form>
+{% if overrides %}<ul class="activity-list">{% for route in overrides %}<li>
+<div>
+<a href="{% url 'invoice_detail' workspace.pk route.invoice_id %}"><strong>{{ route.invoice.number }}</strong></a>
+<span>{{ route.get_provider_display }}: {{ route.reason }}</span>
+<span>Set by {{ route.set_by.first_name|default:route.set_by.email }}</span>
+</div>
+<form method="post" action="{% url 'checkout_routing_override_remove' workspace.pk route.pk %}">{% csrf_token %}<button class="text-button" type="submit">Remove</button>
+</form>
+</li>{% endfor %}</ul>{% else %}<p class="muted">No overrides. Every payment follows the routing policy.</p>{% endif %}</section>
+<section class="activity">
+<div class="section-heading">
+<h2>Routing history</h2>
+<span class="muted">Latest 50</span>
+</div>{% if decisions %}<div class="data-table">
+<table>
+<caption class="visually-hidden">Routing history</caption>
+<thead>
+<tr>
+<th scope="col">Invoice</th>
+<th scope="col">Gateway</th>
+<th scope="col">Why</th>
+<th scope="col">When</th>
+</tr>
+</thead>
+<tbody>{% for decision in decisions %}<tr>
+<td><a class="doc-number" href="{% url 'invoice_detail' workspace.pk decision.invoice_id %}"><strong>{{ decision.invoice.number }}</strong></a></td>
+<td data-label="Gateway">{% if decision.provider %}{{ decision.get_provider_display }}{% else %}<span class="tag status-overdue">Not routed</span>{% endif %}<span>{{ decision.get_basis_display }}</span></td>
+<td data-label="Why">{{ decision.explanation }}</td>
+<td data-label="When">{{ decision.created_at|date:'d M Y, H:i' }} IST</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% else %}<p class="muted">No payments have been routed yet. Each prepared payment records its gateway and the reason here.</p>{% endif %}</section>{% endblock %}
